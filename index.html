@@ -260,8 +260,12 @@
                 currentPlantId = pid;
                 mostrarTela(document.getElementById('main-app'));
                 iniciarMonitoramento(currentPlantId);
+                
+                // Se vincular com sucesso, solicita o token ou gera na hora
                 if (Notification.permission !== "granted") {
                     document.getElementById('notification-banner').style.display = "block";
+                } else {
+                    pedirPermissaoEGerarToken(false);
                 }
             });
         }
@@ -310,14 +314,18 @@
         }
 
         // ==========================================================
-        // ESCUTA NO FOREGROUND (App Aberto) - Extraindo do payload.data
+        // ESCUTA NO FOREGROUND (App Aberto) - Extraindo do payload.data e forçando vibração
         // ==========================================================
         messaging.onMessage((payload) => {
             console.log("Recebido em FOREGROUND:", payload);
             document.getElementById('nav-btn-alarms').classList.add('alarm-active');
             
-            const data = payload.data || {};
+            // Suporta tanto o formato "data" puro quanto o formato misto/antigo "notification"
+            const data = payload.data || payload.notification || {};
+            const title = data.title || "⚠️ ALARME INDUSTRIAL";
+            const body = data.body || "Alarme disparado";
             const timeStr = new Date().toLocaleTimeString();
+            
             const item = document.createElement('div');
             item.className = 'alarm-item';
             
@@ -325,8 +333,20 @@
             const emptyMsg = document.getElementById('alarms-empty');
             if(emptyMsg) emptyMsg.style.display = 'none';
 
-            item.innerHTML = `<div class="alarm-time">${timeStr}</div><div class="alarm-msg">${data.body || 'Alarme disparado'}</div>`;
+            item.innerHTML = `<div class="alarm-time">${timeStr}</div><div class="alarm-msg">${body}</div>`;
             document.getElementById('alarms-list').prepend(item);
+
+            // GATILHO CRÍTICO: Força o banner e a vibração MESMO com o app aberto!
+            if ("Notification" in window && Notification.permission === "granted") {
+                navigator.serviceWorker.ready.then(function(registration) {
+                    registration.showNotification(title, {
+                        body: body,
+                        icon: "icon.png",
+                        vibrate: [500, 200, 500, 200, 800, 200, 800], // Vibração industrial de alerta
+                        tag: data.tag || 'scada-alarm-foreground'
+                    });
+                });
+            }
         });
 
         // ==========================================================
