@@ -163,14 +163,30 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
-        const messaging = firebase.messaging();
+        
+        // ==========================================================
+        // CORREÇÃO CRÍTICA (IPHONE/SAFARI): Escudo Anti-Crash
+        // O iOS bloqueia o objeto messaging se não estiver na Home Screen.
+        // ==========================================================
+        let messaging = null;
+        try {
+            if (firebase.messaging.isSupported()) {
+                messaging = firebase.messaging();
+            } else {
+                console.warn("⚠️ FCM não suportado nativamente neste browser.");
+            }
+        } catch (err) {
+            console.error("⚠️ Bloqueio do iOS detetado no Firebase Messaging.", err);
+        }
 
         let currentPlantId = null;
         let unsubscribeStatus = null;
         let unsubscribeTags = null;
         
-        // REGISTRO ROBUSTO DO SERVICE WORKER NA RAIZ
-        if ('serviceWorker' in navigator) {
+        // ==========================================================
+        // REGISTRO DO SERVICE WORKER (Ignora no Preview do Chat)
+        // ==========================================================
+        if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' })
                 .then((registration) => {
@@ -283,8 +299,8 @@
         // SISTEMA ESTÁVEL DE GERAÇÃO DE TOKEN (VAPID)
         // ==========================================================
         function pedirPermissaoEGerarToken(mostrarAlertas = false) {
-            if (!("Notification" in window) || !("serviceWorker" in navigator)) {
-                if(mostrarAlertas) alert("Navegador não suporta Push.");
+            if (!("Notification" in window) || !("serviceWorker" in navigator) || !messaging) {
+                if(mostrarAlertas) alert("O seu telemóvel não suporta Alarmes em Segundo Plano. (Se usar iPhone, tem de 'Adicionar ao Ecrã Principal' primeiro!)");
                 return;
             }
 
@@ -293,19 +309,21 @@
                     document.getElementById('notification-banner').style.display = "none";
                     
                     navigator.serviceWorker.ready.then((registration) => {
-                        messaging.getToken({ 
-                            vapidKey: VAPID_KEY,
-                            serviceWorkerRegistration: registration 
-                        }).then((currentToken) => {
-                            if (currentToken && currentPlantId) {
-                                // Salva o token na planta vinculada
-                                db.ref('plants/' + currentPlantId + '/tokens/' + currentToken).set(true);
-                                if(mostrarAlertas) alert("Alertas de Segurança ativados com sucesso!");
-                            }
-                        }).catch((err) => {
-                            if(mostrarAlertas) alert("Erro ao gerar chave de segurança: " + err);
-                            console.error("Erro getToken:", err);
-                        });
+                        // Pequeno atraso para garantir que o SW instalou e ativou completamente
+                        setTimeout(() => {
+                            messaging.getToken({ 
+                                vapidKey: VAPID_KEY,
+                                serviceWorkerRegistration: registration 
+                            }).then((currentToken) => {
+                                if (currentToken && currentPlantId) {
+                                    db.ref('plants/' + currentPlantId + '/tokens/' + currentToken).set(true);
+                                    if(mostrarAlertas) alert("Alertas de Segurança ativados com sucesso! Pode fechar o ecrã.");
+                                }
+                            }).catch((err) => {
+                                if(mostrarAlertas) alert("Erro ao contactar servidor da Google/Apple: " + err);
+                                console.error("Erro getToken:", err);
+                            });
+                        }, 500); // 500ms de margem de segurança
                     });
                 } else {
                     if(mostrarAlertas) alert("Permissão negada pelo operador.");
@@ -314,40 +332,40 @@
         }
 
         // ==========================================================
-        // ESCUTA NO FOREGROUND (App Aberto) - Extraindo do payload.data e forçando vibração
+        // ESCUTA NO FOREGROUND (App Aberto)
         // ==========================================================
-        messaging.onMessage((payload) => {
-            console.log("Recebido em FOREGROUND:", payload);
-            document.getElementById('nav-btn-alarms').classList.add('alarm-active');
-            
-            // Suporta tanto o formato "data" puro quanto o formato misto/antigo "notification"
-            const data = payload.data || payload.notification || {};
-            const title = data.title || "⚠️ ALARME INDUSTRIAL";
-            const body = data.body || "Alarme disparado";
-            const timeStr = new Date().toLocaleTimeString();
-            
-            const item = document.createElement('div');
-            item.className = 'alarm-item';
-            
-            // Lógica para esconder a mensagem "Sem alarmes"
-            const emptyMsg = document.getElementById('alarms-empty');
-            if(emptyMsg) emptyMsg.style.display = 'none';
+        if (messaging) {
+            messaging.onMessage((payload) => {
+                console.log("Recebido em FOREGROUND:", payload);
+                document.getElementById('nav-btn-alarms').classList.add('alarm-active');
+                
+                const data = payload.data || payload.notification || {};
+                const title = data.title || "⚠️ ALARME INDUSTRIAL";
+                const body = data.body || "Alarme disparado";
+                const timeStr = new Date().toLocaleTimeString();
+                
+                const item = document.createElement('div');
+                item.className = 'alarm-item';
+                
+                const emptyMsg = document.getElementById('alarms-empty');
+                if(emptyMsg) emptyMsg.style.display = 'none';
 
-            item.innerHTML = `<div class="alarm-time">${timeStr}</div><div class="alarm-msg">${body}</div>`;
-            document.getElementById('alarms-list').prepend(item);
+                item.innerHTML = `<div class="alarm-time">${timeStr}</div><div class="alarm-msg">${body}</div>`;
+                document.getElementById('alarms-list').prepend(item);
 
-            // GATILHO CRÍTICO: Força o banner e a vibração MESMO com o app aberto!
-            if ("Notification" in window && Notification.permission === "granted") {
-                navigator.serviceWorker.ready.then(function(registration) {
-                    registration.showNotification(title, {
-                        body: body,
-                        icon: "icon.png",
-                        vibrate: [500, 200, 500, 200, 800, 200, 800], // Vibração industrial de alerta
-                        tag: data.tag || 'scada-alarm-foreground'
+                // Força o banner e a vibração MESMO com o app aberto!
+                if ("Notification" in window && Notification.permission === "granted") {
+                    navigator.serviceWorker.ready.then(function(registration) {
+                        registration.showNotification(title, {
+                            body: body,
+                            icon: "icon.png",
+                            vibrate: [500, 200, 500, 200, 800, 200, 800],
+                            tag: data.tag || 'scada-alarm-foreground'
+                        });
                     });
-                });
-            }
-        });
+                }
+            });
+        }
 
         // ==========================================================
         // MOTOR DE DADOS
