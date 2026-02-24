@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AuraStream WEB - Cloud</title>
+    <title>AuraStream WEB - Portal Multi-Cliente</title>
     
     <!-- SDKs do Firebase (Versão 8 Compat para HTML puro) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -19,6 +19,7 @@
             --text-muted: #aaaaaa;
             --value-color: #00BCD4;
             --error-color: #ff4444;
+            --btn-color: #1565C0;
         }
         body {
             background-color: var(--bg-color);
@@ -31,11 +32,15 @@
             align-items: center;
         }
 
-        /* --- TELA DE LOGIN --- */
-        #login-screen {
-            display: flex;
+        .screen-container {
+            display: none; /* Escondido por padrão, o JS decide quem aparece */
             flex-direction: column;
             align-items: center;
+            width: 100%;
+        }
+
+        /* --- TELAS DE LOGIN E SETUP --- */
+        .auth-box {
             margin-top: 100px;
             background: var(--card-bg);
             padding: 40px;
@@ -43,9 +48,12 @@
             border-top: 4px solid var(--primary);
             box-shadow: 0 8px 16px rgba(0,0,0,0.5);
             width: 100%;
-            max-width: 350px;
+            max-width: 380px;
+            text-align: center;
         }
-        #login-screen h2 { color: var(--primary); margin-bottom: 20px; }
+        .auth-box h2 { color: var(--primary); margin-bottom: 5px; }
+        .auth-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 25px; }
+        
         .input-field {
             width: 100%;
             padding: 12px;
@@ -55,6 +63,7 @@
             background: #2d2d2d;
             color: white;
             box-sizing: border-box;
+            font-size: 16px;
         }
         .btn-primary {
             width: 100%;
@@ -66,24 +75,34 @@
             border-radius: 6px;
             cursor: pointer;
             transition: 0.2s;
+            font-size: 16px;
         }
         .btn-primary:hover { background: #00c853; }
+
+        .btn-secondary {
+            background: var(--btn-color);
+            color: white;
+        }
+        .btn-secondary:hover { background: #0d47a1; }
         
         /* --- TELA PRINCIPAL (DASHBOARD) --- */
         #dashboard-screen {
-            display: none;
-            width: 100%;
             max-width: 1400px;
         }
-        header { text-align: center; margin-bottom: 30px; position: relative; }
+        header { text-align: center; margin-bottom: 30px; position: relative; width: 100%; }
         h1 { color: var(--primary); margin: 0; font-size: 28px; }
         
-        #btn-logout {
+        .header-controls {
             position: absolute;
             top: 0; right: 0;
-            background: #444; color: white; border: none; padding: 8px 15px;
-            border-radius: 4px; cursor: pointer;
+            display: flex;
+            gap: 10px;
         }
+        .btn-small {
+            background: #444; color: white; border: none; padding: 8px 15px;
+            border-radius: 4px; cursor: pointer; font-size: 12px;
+        }
+        .btn-small:hover { background: #666; }
 
         .status-badge {
             display: inline-block;
@@ -102,6 +121,7 @@
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
             margin-top: 20px;
+            width: 100%;
         }
         .card {
             background-color: var(--card-bg);
@@ -110,6 +130,7 @@
             box-shadow: 0 8px 16px rgba(0,0,0,0.4);
             text-align: center;
             border-top: 4px solid var(--primary);
+            position: relative;
         }
         .tag-title { font-size: 15px; color: var(--text-muted); margin-bottom: 15px; font-weight: 600;}
         .tag-value { font-size: 42px; font-weight: 700; color: var(--value-color); }
@@ -118,22 +139,42 @@
 </head>
 <body>
 
-    <!-- TELA DE LOGIN -->
-    <div id="login-screen">
-        <h2>Acesso Industrial</h2>
-        <input type="email" id="email" class="input-field" placeholder="E-mail" required>
-        <input type="password" id="password" class="input-field" placeholder="Palavra-passe" required>
-        <button class="btn-primary" onclick="login()">Entrar Seguramente</button>
-        <p id="login-error" style="color: var(--error-color); font-size: 12px; display: none;"></p>
+    <!-- 1. TELA DE LOGIN -->
+    <div id="login-screen" class="screen-container">
+        <div class="auth-box">
+            <h2>Acesso Industrial</h2>
+            <p>Faça login para monitorar a sua planta.</p>
+            <input type="email" id="email" class="input-field" placeholder="E-mail" required>
+            <input type="password" id="password" class="input-field" placeholder="Palavra-passe" required>
+            <button class="btn-primary" onclick="login()">Entrar Seguramente</button>
+            <p id="login-error" style="color: var(--error-color); font-size: 13px; display: none; margin-top: 10px;"></p>
+        </div>
     </div>
 
-    <!-- TELA DO DASHBOARD -->
-    <div id="dashboard-screen">
+    <!-- 2. TELA DE VÍNCULO DE FÁBRICA (Primeiro Acesso) -->
+    <div id="setup-screen" class="screen-container">
+        <div class="auth-box">
+            <h2 style="color: var(--value-color);">Vincular Fábrica</h2>
+            <p>Detectámos que é o seu primeiro acesso. Insira o <b>ID da Nuvem</b> gerado no computador do servidor (AuraStream Local -> Licença/Sobre).</p>
+            <input type="text" id="input-plant-id" class="input-field" placeholder="Ex: 8473f9fa" maxlength="8">
+            <button class="btn-primary btn-secondary" onclick="linkPlant()">Sincronizar Fábrica</button>
+            <br><br>
+            <button class="btn-small" onclick="logout()">Sair</button>
+        </div>
+    </div>
+
+    <!-- 3. TELA DO DASHBOARD (Monitoramento) -->
+    <div id="dashboard-screen" class="screen-container">
         <header>
             <h1>AuraStream WEB</h1>
-            <p class="subtitle">Monitoramento Firebase Realtime</p>
-            <div id="plant-status" class="status-badge offline">FÁBRICA OFFLINE</div>
-            <button id="btn-logout" onclick="logout()">Sair</button>
+            <p class="subtitle">Monitoramento em Tempo Real</p>
+            <div id="plant-status" class="status-badge offline">A LIGAR...</div>
+            
+            <div class="header-controls">
+                <!-- Botão oculto para caso o utilizador queira mudar de fábrica futuramente -->
+                <button class="btn-small" onclick="desvincularPlanta()" style="background-color: #8B0000;" title="Mudar a fábrica vinculada a esta conta">Trocar Fábrica</button>
+                <button class="btn-small" onclick="logout()">Sair (Logout)</button>
+            </div>
         </header>
         
         <div class="dashboard-grid" id="dashboard">
@@ -143,7 +184,7 @@
 
     <script>
         // =========================================================================
-        // 1. CONFIGURAÇÕES DO SEU FIREBASE (COLE AS CHAVES DO PASSO 2 AQUI)
+        // CONFIGURAÇÕES DO SEU FIREBASE
         // =========================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyAkoZykh9QaROTsCQC7_qs4NGNl4-cdMBM",
@@ -156,88 +197,134 @@
             measurementId: "G-ZD0X4WHZSJ"
         };
 
-        // =========================================================================
-        // 2. IDENTIFICAÇÃO DA SUA FÁBRICA
-        // =========================================================================
-        // Coloque aqui o ID exato que foi gerado no seu ficheiro 'plant_id.json' no PC
-        const PLANT_ID = "8473f9fa"; 
-
-        // Inicializa o Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // ELEMENTOS DA UI
+        // ELEMENTOS HTML
         const loginScreen = document.getElementById('login-screen');
+        const setupScreen = document.getElementById('setup-screen');
         const dashboardScreen = document.getElementById('dashboard-screen');
         const dashboard = document.getElementById('dashboard');
         const emptyMsg = document.getElementById('empty-msg');
         const plantStatus = document.getElementById('plant-status');
         const loginError = document.getElementById('login-error');
 
+        // VARIÁVEL DE CONTROLE GLOBAL
+        let currentPlantId = null;
+        let unsubscribeStatus = null;
+        let unsubscribeTags = null;
+
         // =========================================================================
-        // LÓGICA DE AUTENTICAÇÃO
+        // LÓGICA DE ROTEAMENTO (QUAL TELA MOSTRAR)
         // =========================================================================
         auth.onAuthStateChanged((user) => {
             if (user) {
-                // Utilizador logado! Esconde login, mostra dashboard e liga BD
-                loginScreen.style.display = 'none';
-                dashboardScreen.style.display = 'block';
-                iniciarMonitoramento();
+                // Utilizador logado! Vamos verificar se ele já tem uma fábrica vinculada.
+                db.ref('users/' + user.uid + '/plant_id').once('value').then((snapshot) => {
+                    if (snapshot.exists()) {
+                        // Já tem fábrica vinculada! Vai direto para o Dashboard.
+                        currentPlantId = snapshot.val();
+                        mostrarTela(dashboardScreen);
+                        iniciarMonitoramento(currentPlantId);
+                    } else {
+                        // Primeiro login! Mostra a tela para digitar o ID da fábrica.
+                        mostrarTela(setupScreen);
+                    }
+                }).catch(err => {
+                    console.error("Erro ao ler perfil:", err);
+                    alert("Erro ao aceder ao banco de dados. Verificou as regras do Firebase?");
+                });
             } else {
-                // Utilizador deslogado! Mostra login, esconde dashboard
-                loginScreen.style.display = 'flex';
-                dashboardScreen.style.display = 'none';
-                dashboard.innerHTML = '<div class="empty-msg" id="empty-msg">A aguardar telemetria...</div>';
+                // Não logado. Volta para o Login.
+                pararMonitoramento();
+                mostrarTela(loginScreen);
             }
         });
 
+        function mostrarTela(tela) {
+            loginScreen.style.display = 'none';
+            setupScreen.style.display = 'none';
+            dashboardScreen.style.display = 'none';
+            tela.style.display = 'flex';
+        }
+
+        // =========================================================================
+        // FUNÇÕES DE AÇÃO DO UTILIZADOR
+        // =========================================================================
         function login() {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
             loginError.style.display = 'none';
             
-            auth.signInWithEmailAndPassword(email, pass)
-                .catch((error) => {
-                    loginError.innerText = "Erro: E-mail ou palavra-passe incorretos.";
-                    loginError.style.display = 'block';
-                });
+            auth.signInWithEmailAndPassword(email, pass).catch((error) => {
+                loginError.innerText = "E-mail ou palavra-passe incorretos.";
+                loginError.style.display = 'block';
+            });
         }
 
         function logout() {
             auth.signOut();
         }
 
-        // =========================================================================
-        // LÓGICA DO BANCO DE DADOS (REALTIME)
-        // =========================================================================
-        function iniciarMonitoramento() {
-            const plantRef = db.ref('plants/' + PLANT_ID);
+        function linkPlant() {
+            const pid = document.getElementById('input-plant-id').value.trim();
+            if(!pid || pid.length < 4) {
+                alert("Por favor, digite um ID válido.");
+                return;
+            }
+
+            const uid = auth.currentUser.uid;
             
-            // 1. Escuta o status (Online/Offline) da máquina local
-            plantRef.child('online').on('value', (snapshot) => {
+            // Grava o vínculo no banco de dados do utilizador
+            db.ref('users/' + uid + '/plant_id').set(pid).then(() => {
+                currentPlantId = pid;
+                mostrarTela(dashboardScreen);
+                iniciarMonitoramento(currentPlantId);
+            }).catch(err => {
+                alert("Falha ao salvar vínculo. Verifique as regras do Firebase.");
+            });
+        }
+
+        function desvincularPlanta() {
+            if(confirm("Tem certeza que deseja desvincular esta fábrica da sua conta? Terá de inserir o código novamente.")) {
+                const uid = auth.currentUser.uid;
+                pararMonitoramento();
+                db.ref('users/' + uid + '/plant_id').remove().then(() => {
+                    currentPlantId = null;
+                    mostrarTela(setupScreen);
+                });
+            }
+        }
+
+        // =========================================================================
+        // MOTOR DE MONITORAMENTO REALTIME DO FIREBASE
+        // =========================================================================
+        function iniciarMonitoramento(plantId) {
+            const plantRef = db.ref('plants/' + plantId);
+            dashboard.innerHTML = '<div class="empty-msg" id="empty-msg">A aguardar telemetria da fábrica ('+plantId+')...</div>';
+            
+            // 1. Escuta o status
+            unsubscribeStatus = plantRef.child('online').on('value', (snapshot) => {
                 const isOnline = snapshot.val();
                 if (isOnline) {
                     plantStatus.className = "status-badge online";
-                    plantStatus.innerText = "FÁBRICA ONLINE (Sincronizado)";
+                    plantStatus.innerText = "ONLINE - ID: " + plantId;
                 } else {
                     plantStatus.className = "status-badge offline";
-                    plantStatus.innerText = "FÁBRICA OFFLINE (Sem Sinal)";
+                    plantStatus.innerText = "OFFLINE - ID: " + plantId;
                 }
             });
 
-            // 2. Escuta todas as Tags variáveis em tempo real
-            plantRef.child('tags').on('value', (snapshot) => {
+            // 2. Escuta as variáveis
+            unsubscribeTags = plantRef.child('tags').on('value', (snapshot) => {
                 const tags = snapshot.val();
-                
                 if (tags) {
-                    // Esconde mensagem de vazio
                     const empty = document.getElementById('empty-msg');
                     if(empty) empty.style.display = 'none';
 
-                    // Atualiza ou cria os cartões para cada tag
                     for (const [tagName, tagValue] of Object.entries(tags)) {
-                        let id = tagName.replace(/[^a-zA-Z0-9_-]/g, "_");
+                        let id = "tag_" + tagName.replace(/[^a-zA-Z0-9_-]/g, "_");
                         let card = document.getElementById(id);
 
                         if (!card) {
@@ -247,10 +334,7 @@
                             dashboard.appendChild(card);
                         }
 
-                        // Formata o nome para ficar mais bonito (Tira os "_")
                         let displayTitle = tagName.replace(/_/g, " ");
-                        
-                        // Garante que é número com 2 casas decimais, a menos que seja texto
                         let displayValue = typeof tagValue === 'number' ? tagValue.toFixed(2) : tagValue;
 
                         card.innerHTML = `
@@ -260,6 +344,14 @@
                     }
                 }
             });
+        }
+
+        function pararMonitoramento() {
+            if (currentPlantId) {
+                const plantRef = db.ref('plants/' + currentPlantId);
+                if(unsubscribeStatus) plantRef.child('online').off('value', unsubscribeStatus);
+                if(unsubscribeTags) plantRef.child('tags').off('value', unsubscribeTags);
+            }
         }
     </script>
 </body>
