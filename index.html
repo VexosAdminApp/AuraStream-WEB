@@ -2,190 +2,245 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AuraStream WEB - Portal Multi-Cliente</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AuraStream WEB</title>
     
-    <!-- SDKs do Firebase (Versão 8 Compat para HTML puro) -->
+    <!-- PWA e Ícones Corrigidos (iPhone e Android) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
+
+    <!-- SDKs do Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
+            --bg-color: #0a0a0a;
+            --card-bg: #141414;
             --primary: #00E676;
             --text-main: #ffffff;
-            --text-muted: #aaaaaa;
+            --text-muted: #888888;
             --value-color: #00BCD4;
-            --error-color: #ff4444;
+            --error-color: #ff3333;
             --btn-color: #1565C0;
+            --nav-bg: #111111;
         }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 100vh;
         }
 
         .screen-container {
-            display: none; /* Escondido por padrão, o JS decide quem aparece */
+            display: none; 
             flex-direction: column;
             align-items: center;
             width: 100%;
+            padding: 20px;
+            padding-bottom: 90px; /* Espaço para o menu inferior */
         }
 
-        /* --- TELAS DE LOGIN E SETUP --- */
-        .auth-box {
-            margin-top: 100px;
-            background: var(--card-bg);
-            padding: 40px;
+        /* --- ANIMAÇÕES DE ALARME --- */
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); background-color: rgba(255, 51, 51, 0.2); }
+            50% { box-shadow: 0 0 0 15px rgba(255, 51, 51, 0); background-color: rgba(255, 51, 51, 0.05); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); background-color: rgba(255, 51, 51, 0.2); }
+        }
+        .alarm-active {
+            animation: pulse-red 1.5s infinite;
+            border: 1px solid var(--error-color) !important;
             border-radius: 12px;
+            color: #ffcccc;
+        }
+
+        /* --- TELAS DE LOGIN --- */
+        .auth-box {
+            margin-top: 10vh;
+            background: var(--card-bg);
+            padding: 40px 30px;
+            border-radius: 20px;
             border-top: 4px solid var(--primary);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
             width: 100%;
-            max-width: 380px;
+            max-width: 400px;
             text-align: center;
         }
-        .auth-box h2 { color: var(--primary); margin-bottom: 5px; }
-        .auth-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 25px; }
+        .auth-box h2 { color: var(--primary); margin: 0 0 10px 0; font-weight: 800; font-size: 26px;}
+        .auth-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 30px; }
         
         .input-field {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border-radius: 6px;
-            border: 1px solid #444;
-            background: #2d2d2d;
-            color: white;
-            box-sizing: border-box;
-            font-size: 16px;
+            width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 10px;
+            border: 1px solid #333; background: #1f1f1f; color: white;
+            font-size: 16px; outline: none; transition: border 0.3s;
         }
+        .input-field:focus { border-color: var(--primary); }
+        
         .btn-primary {
-            width: 100%;
-            padding: 12px;
-            background: var(--primary);
-            color: #000;
-            font-weight: bold;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: 0.2s;
-            font-size: 16px;
+            width: 100%; padding: 15px; background: var(--primary); color: #000;
+            font-weight: 800; border: none; border-radius: 10px; cursor: pointer;
+            font-size: 16px; margin-top: 10px;
         }
-        .btn-primary:hover { background: #00c853; }
+        .btn-secondary { background: var(--btn-color); color: white; }
 
-        .btn-secondary {
-            background: var(--btn-color);
-            color: white;
-        }
-        .btn-secondary:hover { background: #0d47a1; }
+        /* --- DASHBOARD E ABAS --- */
+        #main-app { max-width: 1200px; padding: 15px; padding-bottom: 90px; }
         
-        /* --- TELA PRINCIPAL (DASHBOARD) --- */
-        #dashboard-screen {
-            max-width: 1400px;
-        }
-        header { text-align: center; margin-bottom: 30px; position: relative; width: 100%; }
-        h1 { color: var(--primary); margin: 0; font-size: 28px; }
+        header { text-align: center; margin-bottom: 25px; width: 100%; }
+        h1 { color: var(--primary); margin: 0; font-size: 22px; font-weight: 800;}
         
-        .header-controls {
-            position: absolute;
-            top: 0; right: 0;
-            display: flex;
-            gap: 10px;
-        }
-        .btn-small {
-            background: #444; color: white; border: none; padding: 8px 15px;
-            border-radius: 4px; cursor: pointer; font-size: 12px;
-        }
-        .btn-small:hover { background: #666; }
-
         .status-badge {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            margin-top: 10px;
-            background-color: #555;
+            display: inline-block; padding: 6px 14px; border-radius: 20px;
+            font-size: 11px; font-weight: 800; margin-top: 8px; letter-spacing: 0.5px;
         }
-        .online { background-color: var(--primary); color: black; }
-        .offline { background-color: var(--error-color); color: white; }
+        .online { background-color: rgba(0, 230, 118, 0.2); color: var(--primary); border: 1px solid var(--primary);}
+        .offline { background-color: rgba(255, 68, 68, 0.2); color: var(--error-color); border: 1px solid var(--error-color);}
 
+        .app-tab { display: none; width: 100%; animation: fadeIn 0.3s; }
+        .app-tab.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* GRID DE VARIÁVEIS */
         .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-            width: 100%;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px;
         }
         .card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 25px 20px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
-            text-align: center;
-            border-top: 4px solid var(--primary);
-            position: relative;
+            background-color: var(--card-bg); border-radius: 16px; padding: 20px 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-align: center;
+            border: 1px solid #222; position: relative;
         }
-        .tag-title { font-size: 15px; color: var(--text-muted); margin-bottom: 15px; font-weight: 600;}
-        .tag-value { font-size: 42px; font-weight: 700; color: var(--value-color); }
-        .empty-msg { text-align: center; color: var(--text-muted); grid-column: 1 / -1; padding: 40px; }
+        .tag-title { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
+        .tag-value { font-size: 32px; font-weight: 800; color: var(--value-color); letter-spacing: -1px;}
+
+        /* LISTA DE ALARMES */
+        .alarm-item {
+            background: #220b0b; border-left: 4px solid var(--error-color);
+            padding: 15px; margin-bottom: 12px; border-radius: 8px; text-align: left;
+        }
+        .alarm-time { font-size: 11px; color: #ff9999; margin-bottom: 5px; }
+        .alarm-msg { font-size: 14px; font-weight: 600; color: white; }
+
+        /* MENU INFERIOR (BOTTOM NAV) */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 70px;
+            background: var(--nav-bg); display: flex; justify-content: space-around;
+            align-items: center; border-top: 1px solid #222; z-index: 1000;
+            padding-bottom: env(safe-area-inset-bottom); /* Fix para iPhone Notch */
+        }
+        .nav-item {
+            color: #666; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; width: 33%; height: 100%; cursor: pointer; transition: 0.2s;
+        }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 24px; margin-bottom: 4px; }
+        .nav-text { font-size: 10px; font-weight: 700; }
+
+        /* BANNER PERMISSÃO */
+        #notification-banner {
+            background: linear-gradient(135deg, #ff9800, #ff5722); color: white;
+            padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 13px;
+            font-weight: 800; display: none; cursor: pointer; text-align: center;
+            box-shadow: 0 4px 10px rgba(255, 152, 0, 0.4);
+        }
     </style>
 </head>
 <body>
 
-    <!-- 1. TELA DE LOGIN -->
+    <!-- TELA DE LOGIN -->
     <div id="login-screen" class="screen-container">
         <div class="auth-box">
-            <h2>Acesso Industrial</h2>
-            <p>Faça login para monitorar a sua planta.</p>
+            <h2>AuraStream</h2>
+            <p>Monitoramento 4.0 Seguro</p>
             <input type="email" id="email" class="input-field" placeholder="E-mail" required>
             <input type="password" id="password" class="input-field" placeholder="Palavra-passe" required>
             <button class="btn-primary" onclick="login()">Entrar Seguramente</button>
-            <p id="login-error" style="color: var(--error-color); font-size: 13px; display: none; margin-top: 10px;"></p>
+            <p id="login-error" style="color: var(--error-color); font-size: 13px; display: none; margin-top: 15px;"></p>
         </div>
     </div>
 
-    <!-- 2. TELA DE VÍNCULO DE FÁBRICA (Primeiro Acesso) -->
+    <!-- TELA DE SETUP (VÍNCULO) -->
     <div id="setup-screen" class="screen-container">
         <div class="auth-box">
             <h2 style="color: var(--value-color);">Vincular Fábrica</h2>
-            <p>Detectámos que é o seu primeiro acesso. Insira o <b>ID da Nuvem</b> gerado no computador do servidor (AuraStream Local -> Licença/Sobre).</p>
-            <input type="text" id="input-plant-id" class="input-field" placeholder="Ex: 8473f9fa" maxlength="8">
-            <button class="btn-primary btn-secondary" onclick="linkPlant()">Sincronizar Fábrica</button>
-            <br><br>
-            <button class="btn-small" onclick="logout()">Sair</button>
+            <p>Insira o <b>ID da Nuvem</b> gerado no computador do cliente.</p>
+            <input type="text" id="input-plant-id" class="input-field" placeholder="Ex: 8473f9fa" maxlength="8" style="text-align: center; font-size: 20px; font-weight: bold; letter-spacing: 2px;">
+            <button class="btn-primary btn-secondary" onclick="linkPlant()">Sincronizar</button>
+            <button class="btn-primary" style="background: #333; color: white; margin-top: 15px;" onclick="logout()">Sair</button>
         </div>
     </div>
 
-    <!-- 3. TELA DO DASHBOARD (Monitoramento) -->
-    <div id="dashboard-screen" class="screen-container">
+    <!-- TELA PRINCIPAL (APP COM ABAS) -->
+    <div id="main-app" class="screen-container">
         <header>
-            <h1>AuraStream WEB</h1>
-            <p class="subtitle">Monitoramento em Tempo Real</p>
+            <h1>AuraStream</h1>
             <div id="plant-status" class="status-badge offline">A LIGAR...</div>
-            
-            <div class="header-controls">
-                <!-- Botão oculto para caso o utilizador queira mudar de fábrica futuramente -->
-                <button class="btn-small" onclick="desvincularPlanta()" style="background-color: #8B0000;" title="Mudar a fábrica vinculada a esta conta">Trocar Fábrica</button>
-                <button class="btn-small" onclick="logout()">Sair (Logout)</button>
+            <div id="notification-banner" onclick="pedirPermissaoNotificacao()">
+                🔔 ATIVAR ALERTAS SONOROS
             </div>
         </header>
-        
-        <div class="dashboard-grid" id="dashboard">
-            <div class="empty-msg" id="empty-msg">A aguardar telemetria...</div>
+
+        <!-- ABA 1: DASHBOARD -->
+        <div id="tab-dashboard" class="app-tab active">
+            <div class="dashboard-grid" id="dashboard">
+                <div style="text-align: center; color: var(--text-muted); grid-column: 1 / -1; padding: 40px;">
+                    A aguardar telemetria em tempo real...
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA 2: ALARMES -->
+        <div id="tab-alarms" class="app-tab">
+            <div id="alarms-list">
+                <div style="text-align: center; color: var(--text-muted); padding: 40px;">
+                    Sem alarmes ativos nesta sessão.
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA 3: AJUSTES -->
+        <div id="tab-settings" class="app-tab">
+            <div class="auth-box" style="margin-top: 0;">
+                <h3 style="margin-top: 0;">Configurações</h3>
+                <p>Conta: <span id="user-email-display"></span></p>
+                <button class="btn-primary" style="background: #8B0000; color: white;" onclick="desvincularPlanta()">Trocar de Fábrica</button>
+                <button class="btn-primary" style="background: #333; color: white; margin-top: 15px;" onclick="logout()">Sair (Logout)</button>
+            </div>
+        </div>
+
+        <!-- MENU INFERIOR NATIVO -->
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="switchTab('dashboard', this)">
+                <div class="nav-icon">📊</div>
+                <div class="nav-text">DADOS</div>
+            </div>
+            <div class="nav-item" id="nav-btn-alarms" onclick="switchTab('alarms', this)">
+                <div class="nav-icon">🚨</div>
+                <div class="nav-text">ALERTAS</div>
+            </div>
+            <div class="nav-item" onclick="switchTab('settings', this)">
+                <div class="nav-icon">⚙️</div>
+                <div class="nav-text">AJUSTES</div>
+            </div>
         </div>
     </div>
 
     <script>
-        // =========================================================================
-        // CONFIGURAÇÕES DO SEU FIREBASE
-        // =========================================================================
+        // CONFIGURAÇÕES FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyAkoZykh9QaROTsCQC7_qs4NGNl4-cdMBM",
             authDomain: "aurastreamweb.firebaseapp.com",
@@ -193,154 +248,194 @@
             projectId: "aurastreamweb",
             storageBucket: "aurastreamweb.firebasestorage.app",
             messagingSenderId: "380237625698",
-            appId: "1:380237625698:web:db077e82d8ca77085cd43b",
-            measurementId: "G-ZD0X4WHZSJ"
+            appId: "1:380237625698:web:db077e82d8ca77085cd43b"
         };
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // ELEMENTOS HTML
-        const loginScreen = document.getElementById('login-screen');
-        const setupScreen = document.getElementById('setup-screen');
-        const dashboardScreen = document.getElementById('dashboard-screen');
-        const dashboard = document.getElementById('dashboard');
-        const emptyMsg = document.getElementById('empty-msg');
-        const plantStatus = document.getElementById('plant-status');
-        const loginError = document.getElementById('login-error');
-
-        // VARIÁVEL DE CONTROLE GLOBAL
         let currentPlantId = null;
         let unsubscribeStatus = null;
         let unsubscribeTags = null;
+        let unsubscribeAlarms = null;
+        const appStartTime = Date.now();
 
-        // =========================================================================
-        // LÓGICA DE ROTEAMENTO (QUAL TELA MOSTRAR)
-        // =========================================================================
+        // ROTEAMENTO DE TELAS
         auth.onAuthStateChanged((user) => {
             if (user) {
-                // Utilizador logado! Vamos verificar se ele já tem uma fábrica vinculada.
+                document.getElementById('user-email-display').innerText = user.email;
                 db.ref('users/' + user.uid + '/plant_id').once('value').then((snapshot) => {
                     if (snapshot.exists()) {
-                        // Já tem fábrica vinculada! Vai direto para o Dashboard.
                         currentPlantId = snapshot.val();
-                        mostrarTela(dashboardScreen);
+                        mostrarTela(document.getElementById('main-app'));
                         iniciarMonitoramento(currentPlantId);
+                        verificarPermissaoNotificacao();
                     } else {
-                        // Primeiro login! Mostra a tela para digitar o ID da fábrica.
-                        mostrarTela(setupScreen);
+                        mostrarTela(document.getElementById('setup-screen'));
                     }
-                }).catch(err => {
-                    console.error("Erro ao ler perfil:", err);
-                    alert("Erro ao aceder ao banco de dados. Verificou as regras do Firebase?");
                 });
             } else {
-                // Não logado. Volta para o Login.
                 pararMonitoramento();
-                mostrarTela(loginScreen);
+                mostrarTela(document.getElementById('login-screen'));
             }
         });
 
         function mostrarTela(tela) {
-            loginScreen.style.display = 'none';
-            setupScreen.style.display = 'none';
-            dashboardScreen.style.display = 'none';
+            document.querySelectorAll('.screen-container').forEach(e => e.style.display = 'none');
             tela.style.display = 'flex';
         }
 
-        // =========================================================================
-        // FUNÇÕES DE AÇÃO DO UTILIZADOR
-        // =========================================================================
+        // CONTROLADOR DE ABAS (TABS)
+        function switchTab(tabName, element) {
+            document.querySelectorAll('.app-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+
+            // Se clicar na aba de alertas, desliga a animação de piscar do ícone
+            if(tabName === 'alarms') {
+                document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
+            }
+        }
+
         function login() {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
-            loginError.style.display = 'none';
-            
-            auth.signInWithEmailAndPassword(email, pass).catch((error) => {
-                loginError.innerText = "E-mail ou palavra-passe incorretos.";
-                loginError.style.display = 'block';
+            auth.signInWithEmailAndPassword(email, pass).catch(() => {
+                document.getElementById('login-error').innerText = "Credenciais inválidas.";
+                document.getElementById('login-error').style.display = 'block';
             });
         }
 
-        function logout() {
-            auth.signOut();
-        }
+        function logout() { auth.signOut(); }
 
         function linkPlant() {
             const pid = document.getElementById('input-plant-id').value.trim();
-            if(!pid || pid.length < 4) {
-                alert("Por favor, digite um ID válido.");
-                return;
-            }
-
-            const uid = auth.currentUser.uid;
-            
-            // Grava o vínculo no banco de dados do utilizador
-            db.ref('users/' + uid + '/plant_id').set(pid).then(() => {
+            if(!pid) return;
+            db.ref('users/' + auth.currentUser.uid + '/plant_id').set(pid).then(() => {
                 currentPlantId = pid;
-                mostrarTela(dashboardScreen);
+                mostrarTela(document.getElementById('main-app'));
                 iniciarMonitoramento(currentPlantId);
-            }).catch(err => {
-                alert("Falha ao salvar vínculo. Verifique as regras do Firebase.");
+                verificarPermissaoNotificacao();
             });
         }
 
         function desvincularPlanta() {
-            if(confirm("Tem certeza que deseja desvincular esta fábrica da sua conta? Terá de inserir o código novamente.")) {
-                const uid = auth.currentUser.uid;
+            if(confirm("Desvincular esta fábrica? Terá que inserir um ID novamente.")) {
                 pararMonitoramento();
-                db.ref('users/' + uid + '/plant_id').remove().then(() => {
-                    currentPlantId = null;
-                    mostrarTela(setupScreen);
+                db.ref('users/' + auth.currentUser.uid + '/plant_id').remove().then(() => {
+                    mostrarTela(document.getElementById('setup-screen'));
                 });
             }
         }
 
         // =========================================================================
-        // MOTOR DE MONITORAMENTO REALTIME DO FIREBASE
+        // MOTOR DE NOTIFICAÇÕES E ALARMES
+        // =========================================================================
+        function verificarPermissaoNotificacao() {
+            const banner = document.getElementById('notification-banner');
+            if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+                banner.style.display = "block";
+            } else {
+                banner.style.display = "none";
+            }
+        }
+
+        function pedirPermissaoNotificacao() {
+            if ("Notification" in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        document.getElementById('notification-banner').style.display = "none";
+                        new Notification("AuraStream", { body: "Notificações ativadas!" });
+                    }
+                });
+            }
+        }
+
+        function escutarAlarmes(plantId) {
+            const alarmsRef = db.ref('alarms/' + plantId);
+            const alarmsList = document.getElementById('alarms-list');
+            let hasAlarms = false;
+
+            unsubscribeAlarms = alarmsRef.orderByChild('timestamp').startAt(appStartTime).on('child_added', (snapshot) => {
+                const alarm = snapshot.val();
+                if(alarm && alarm.timestamp >= appStartTime) {
+                    if(!hasAlarms) { alarmsList.innerHTML = ''; hasAlarms = true; } // Limpa a msg vazia
+                    
+                    // Dispara notificação no telemóvel
+                    dispararAlarmeTelemovel(alarm);
+                    
+                    // Faz o ícone de alertas no rodapé piscar em vermelho!
+                    document.getElementById('nav-btn-alarms').classList.add('alarm-active');
+
+                    // Adiciona na Lista de Histórico
+                    const timeStr = new Date(alarm.timestamp).toLocaleTimeString();
+                    const item = document.createElement('div');
+                    item.className = 'alarm-item';
+                    item.innerHTML = `
+                        <div class="alarm-time">${timeStr}</div>
+                        <div class="alarm-msg">🛑 ${alarm.tag}: ${alarm.value}</div>
+                        <div style="font-size: 12px; color: #ccc; margin-top:4px;">${alarm.message}</div>
+                    `;
+                    alarmsList.prepend(item); // Adiciona no topo
+                }
+            });
+        }
+
+        function dispararAlarmeTelemovel(alarm) {
+            const titulo = "⚠️ ALARME SCADA";
+            const corpo = `${alarm.tag}: ${alarm.value}`;
+
+            if ("Notification" in window && Notification.permission === "granted") {
+                navigator.serviceWorker.ready.then(function(registration) {
+                    registration.showNotification(titulo, {
+                        body: corpo, icon: "icon.png", vibrate: [300, 100, 400, 100, 400], requireInteraction: true
+                    });
+                }).catch(() => {
+                    new Notification(titulo, { body: corpo, vibrate: [300, 100, 400] });
+                });
+            }
+        }
+
+        // =========================================================================
+        // MOTOR DE MONITORAMENTO DE DADOS
         // =========================================================================
         function iniciarMonitoramento(plantId) {
             const plantRef = db.ref('plants/' + plantId);
-            dashboard.innerHTML = '<div class="empty-msg" id="empty-msg">A aguardar telemetria da fábrica ('+plantId+')...</div>';
+            const dashboard = document.getElementById('dashboard');
             
-            // 1. Escuta o status
+            escutarAlarmes(plantId);
+
             unsubscribeStatus = plantRef.child('online').on('value', (snapshot) => {
                 const isOnline = snapshot.val();
+                const ps = document.getElementById('plant-status');
                 if (isOnline) {
-                    plantStatus.className = "status-badge online";
-                    plantStatus.innerText = "ONLINE - ID: " + plantId;
+                    ps.className = "status-badge online"; ps.innerText = "ONLINE - " + plantId;
                 } else {
-                    plantStatus.className = "status-badge offline";
-                    plantStatus.innerText = "OFFLINE - ID: " + plantId;
+                    ps.className = "status-badge offline"; ps.innerText = "OFFLINE - " + plantId;
                 }
             });
 
-            // 2. Escuta as variáveis
             unsubscribeTags = plantRef.child('tags').on('value', (snapshot) => {
                 const tags = snapshot.val();
                 if (tags) {
-                    const empty = document.getElementById('empty-msg');
-                    if(empty) empty.style.display = 'none';
-
+                    // Limpa a msg "Aguardando" se ainda existir
+                    if(dashboard.innerHTML.includes("A aguardar")) dashboard.innerHTML = '';
+                    
                     for (const [tagName, tagValue] of Object.entries(tags)) {
                         let id = "tag_" + tagName.replace(/[^a-zA-Z0-9_-]/g, "_");
                         let card = document.getElementById(id);
-
                         if (!card) {
                             card = document.createElement("div");
                             card.className = "card";
                             card.id = id;
                             dashboard.appendChild(card);
                         }
-
                         let displayTitle = tagName.replace(/_/g, " ");
                         let displayValue = typeof tagValue === 'number' ? tagValue.toFixed(2) : tagValue;
-
-                        card.innerHTML = `
-                            <div class="tag-title">${displayTitle}</div>
-                            <div class="tag-value">${displayValue}</div>
-                        `;
+                        card.innerHTML = `<div class="tag-title">${displayTitle}</div><div class="tag-value">${displayValue}</div>`;
                     }
                 }
             });
@@ -348,10 +443,19 @@
 
         function pararMonitoramento() {
             if (currentPlantId) {
-                const plantRef = db.ref('plants/' + currentPlantId);
-                if(unsubscribeStatus) plantRef.child('online').off('value', unsubscribeStatus);
-                if(unsubscribeTags) plantRef.child('tags').off('value', unsubscribeTags);
+                db.ref('plants/' + currentPlantId + '/online').off('value', unsubscribeStatus);
+                db.ref('plants/' + currentPlantId + '/tags').off('value', unsubscribeTags);
+                db.ref('alarms/' + currentPlantId).off('child_added', unsubscribeAlarms);
             }
+        }
+
+        // Service Worker Virtual (Ativa o PWA de instalação no telemóvel)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swCode = `self.addEventListener('fetch', function() {});`;
+                const blob = new Blob([swCode], {type: 'application/javascript'});
+                navigator.serviceWorker.register(URL.createObjectURL(blob));
+            });
         }
     </script>
 </body>

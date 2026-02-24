@@ -1,0 +1,21 @@
+{
+  "name": "AuraStream Industrial",
+  "short_name": "AuraStream",
+  "description": "Monitoramento e Alarmes Industriais em Tempo Real",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#00E676",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
