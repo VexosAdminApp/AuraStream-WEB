@@ -9,8 +9,8 @@
     <meta name="theme-color" content="#0a0a0a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="/icon.png">
-    <link rel="icon" type="image/png" href="/icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -118,9 +118,14 @@
         </div>
 
         <div id="tab-alarms" class="app-tab">
+            <div style="text-align: right; margin-bottom: 10px; padding: 0 10px;">
+                <button onclick="limparAlarmes()" style="background: #b71c1c; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                    🗑️ Limpar Histórico
+                </button>
+            </div>
             <div id="alarms-list">
                 <div style="text-align: center; color: var(--text-muted); padding: 40px;" id="alarms-empty">
-                    Carregando histórico de alarmes...
+                    Sem alarmes críticos ativos nesta sessão.
                 </div>
             </div>
         </div>
@@ -284,23 +289,23 @@
             }
         }
 
-        // GERAÇÃO DE TOKEN VINCULADA AO USUÁRIO
-        function pedirPermissaoEGerarToken(mostrarAlertas = false) {
-            if (!("Notification" in window) || !("serviceWorker" in navigator) || !messaging) {
-                if(mostrarAlertas) alert("Navegador não suporta Push Industrial.");
-                return;
+        // ==========================================================
+        // LIMPEZA DE ALARMES
+        // ==========================================================
+        function limparAlarmes() {
+            if (!currentPlantId) return;
+            if (confirm("Tem a certeza que deseja apagar todo o histórico de alarmes desta fábrica? Esta ação reflete-se em todos os dispositivos.")) {
+                db.ref('alarms/' + currentPlantId).remove().then(() => {
+                    // A interface será atualizada automaticamente pelo listener do Firebase
+                    document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
+                }).catch((err) => {
+                    alert("Erro ao limpar alarmes: " + err);
+                });
             }
+        }
 
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") {
-                    document.getElementById('notification-banner').style.display = "none";
-                    
-                    navigator.serviceWorker.ready.then((registration) => {
-                        messaging.getToken({ 
-                            vapidKey: VAPID_KEY,
-                            serviceWorkerRegistration: registration 
-                        }).then((currentToken) => {
-                            if (currentToken && currentPlantId && auth.currentUser) {
+        // ==========================================================
+        // GERAÇÃO E ATUALIZAÇÃO SEGURA DO TOKEN (INDUSTRIAL)
                                 // Associando token ao usuário logado permite vários dispositivos sem lixo
                                 db.ref('plants/' + currentPlantId + '/tokens/' + currentToken).set(auth.currentUser.uid);
                                 if(mostrarAlertas) alert("Alertas ativados. O seu dispositivo está registrado de forma segura.");
@@ -362,6 +367,8 @@
                     alarmsList.innerHTML = htmlElements;
                 } else {
                     alarmsList.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px;" id="alarms-empty">Nenhum alarme crítico registado.</div>';
+                    // Remove o piscar vermelho do menu inferior quando o histórico é apagado
+                    document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
                 }
             });
 
