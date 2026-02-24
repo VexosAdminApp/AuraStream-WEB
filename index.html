@@ -9,8 +9,8 @@
     <meta name="theme-color" content="#0a0a0a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="icon.png">
-    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="icon" type="image/png" href="/icon.png">
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -48,7 +48,7 @@
         .btn-primary { width: 100%; padding: 15px; background: var(--primary); color: #000; font-weight: 800; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; margin-top: 10px; }
         .btn-secondary { background: var(--btn-color); color: white; }
 
-        #main-app { max-width: 1200px; padding: 15px; padding-bottom: 90px; }
+        #main-app { max-width: 1200px; padding: 15px; padding-bottom: 90px; width: 100%; }
         header { text-align: center; margin-bottom: 25px; width: 100%; }
         h1 { color: var(--primary); margin: 0; font-size: 22px; font-weight: 800;}
         .status-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 800; margin-top: 8px; letter-spacing: 0.5px; }
@@ -194,6 +194,7 @@
                 });
             });
 
+            // Comunicação de Abas PWA via Service Worker
             navigator.serviceWorker.addEventListener('message', (event) => {
                 if (event.data && event.data.type === 'SWITCH_TAB') {
                     const navBtn = document.getElementById('nav-btn-' + event.data.tab);
@@ -202,7 +203,7 @@
             });
         }
 
-        // ABERTURA VIA URL
+        // ABERTURA DIRETA DE NOTIFICAÇÕES (Pelo link click_url)
         window.onload = () => {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('tab') === 'alarms') {
@@ -231,6 +232,9 @@
                     } else {
                         mostrarTela(document.getElementById('setup-screen'));
                     }
+                }).catch((err) => {
+                    alert("Acesso Negado: A sua conta não tem permissões válidas.\n" + err.message);
+                    logout();
                 });
             } else {
                 pararMonitoramento();
@@ -289,24 +293,27 @@
             }
         }
 
-        // ==========================================================
-        // LIMPEZA DE ALARMES
-        // ==========================================================
         function limparAlarmes() {
             if (!currentPlantId) return;
             if (confirm("Tem a certeza que deseja apagar todo o histórico de alarmes desta fábrica? Esta ação reflete-se em todos os dispositivos.")) {
                 db.ref('alarms/' + currentPlantId).remove().then(() => {
-                    // A interface será atualizada automaticamente pelo listener do Firebase
                     document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
                 }).catch((err) => {
-                    alert("Erro ao limpar alarmes: " + err);
+                    alert("Acesso Negado: Apenas utilizadores vinculados à planta podem apagar o histórico.\n\nDetalhes: " + err.message);
                 });
             }
         }
 
         // ==========================================================
-        // GERAÇÃO E ATUALIZAÇÃO SEGURA DO TOKEN (INDUSTRIAL)
+        // GERAÇÃO INTELIGENTE DE TOKEN (Com OS Detection)
         // ==========================================================
+        function getDeviceOS() {
+            const ua = navigator.userAgent;
+            if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
+            if (/android/i.test(ua)) return 'android';
+            return 'web';
+        }
+
         function pedirPermissaoEGerarToken(mostrarAlertas = false) {
             if (!("Notification" in window) || !("serviceWorker" in navigator) || !messaging) {
                 if(mostrarAlertas) alert("Navegador não suporta Push Industrial.");
@@ -323,9 +330,13 @@
                             serviceWorkerRegistration: registration 
                         }).then((currentToken) => {
                             if (currentToken && currentPlantId && auth.currentUser) {
-                                // Associando token ao usuário logado permite vários dispositivos sem lixo
-                                db.ref('plants/' + currentPlantId + '/tokens/' + currentToken).set(auth.currentUser.uid);
-                                if(mostrarAlertas) alert("Alertas ativados. O seu dispositivo está registrado de forma segura.");
+                                // Guarda com detalhe do Sistema Operativo
+                                db.ref(`plants/${currentPlantId}/tokens/${currentToken}`).set({
+                                    uid: auth.currentUser.uid,
+                                    os: getDeviceOS(),
+                                    updatedAt: firebase.database.ServerValue.TIMESTAMP
+                                });
+                                if(mostrarAlertas) alert("Alertas ativados. O seu dispositivo está blindado na nuvem.");
                             }
                         }).catch((err) => {
                             if(mostrarAlertas) alert("Erro ao contactar FCM: " + err);
@@ -337,25 +348,24 @@
             });
         }
 
-        // ESCUTA NO FOREGROUND E VIBRAÇÃO FORÇADA
+        // ESCUTA NO FOREGROUND (Aplicativo aberto visualmente à frente do utilizador)
         if (messaging) {
             messaging.onMessage((payload) => {
                 document.getElementById('nav-btn-alarms').classList.add('alarm-active');
-                const data = payload.data || {};
                 
-                if ("Notification" in window && Notification.permission === "granted" && document.visibilityState === "visible") {
+                // Se o utilizador NÃO estiver a olhar ativamente para a App, manda notificação nativa
+                // Isto previne a notificação nativa irritante quando ele já está a olhar para os dados.
+                if ("Notification" in window && Notification.permission === "granted" && document.visibilityState !== "visible") {
+                    const data = payload.notification || payload.data || {};
                     navigator.serviceWorker.ready.then(function(registration) {
                         registration.showNotification(data.title || "⚠️ ALARME INDUSTRIAL", {
                             body: data.body || "Alarme disparado",
-                            icon: "icon.png",
+                            icon: "/icon.png",
                             vibrate: [500, 200, 500, 200, 800],
-                            requireInteraction: true,
                             data: { url: '/?tab=alarms' }
                         });
                     });
                 }
-                // O banco de dados vai se encarregar de popular a lista na tela,
-                // portanto não precisamos criar elemento HTML manual aqui.
             });
         }
 
@@ -364,12 +374,10 @@
             const dashboard = document.getElementById('dashboard');
             const alarmsList = document.getElementById('alarms-list');
 
-            // --- 1. CARREGAMENTO DOS DADOS DO BANCO (Corrige o problema de tela vazia) ---
             const alarmsRef = db.ref('alarms/' + plantId).orderByChild('timestamp').limitToLast(30);
             unsubscribeAlarms = alarmsRef.on('value', (snapshot) => {
                 if (snapshot.exists()) {
                     let htmlElements = '';
-                    // Firebase entrega em ordem, varremos para recriar a lista
                     snapshot.forEach((child) => {
                         const alarm = child.val();
                         const timeStr = new Date(alarm.timestamp).toLocaleString('pt-BR');
@@ -379,17 +387,15 @@
                                 <div class="alarm-msg">🛑 ${alarm.tag.replace(/_/g, ' ')}: ${alarm.value}</div>
                                 <div style="font-size: 12px; color: #ccc; margin-top:4px;">${alarm.message || ''}</div>
                             </div>
-                        ` + htmlElements; // Prepend
+                        ` + htmlElements; 
                     });
                     alarmsList.innerHTML = htmlElements;
                 } else {
                     alarmsList.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px;" id="alarms-empty">Nenhum alarme crítico registado.</div>';
-                    // Remove o piscar vermelho do menu inferior quando o histórico é apagado
                     document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
                 }
             });
 
-            // --- 2. STATUS ONLINE/OFFLINE ---
             unsubscribeStatus = db.ref('plants/' + plantId + '/online').on('value', (snapshot) => {
                 const isOnline = snapshot.val();
                 const ps = document.getElementById('plant-status');
@@ -400,7 +406,6 @@
                 }
             });
 
-            // --- 3. TAGS EM TEMPO REAL ---
             unsubscribeTags = db.ref('plants/' + plantId + '/tags').on('value', (snapshot) => {
                 const tags = snapshot.val();
                 if (tags) {

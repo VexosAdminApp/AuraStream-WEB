@@ -1,7 +1,6 @@
 importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
 importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js');
 
-// 1. FORÇA ATIVAÇÃO IMEDIATA (Sem isso, o SW pode ficar em estado 'waiting' para sempre)
 self.addEventListener('install', function(event) {
     self.skipWaiting();
 });
@@ -10,7 +9,6 @@ self.addEventListener('activate', function(event) {
     event.waitUntil(clients.claim());
 });
 
-// 2. CONFIGURAÇÃO FIREBASE
 firebase.initializeApp({
     apiKey: "AIzaSyAkoZykh9QaROTsCQC7_qs4NGNl4-cdMBM",
     authDomain: "aurastreamweb.firebaseapp.com",
@@ -23,38 +21,39 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// 3. EVENTO DE BACKGROUND: O navegador está fechado/oculto
 messaging.onBackgroundMessage(function(payload) {
-    console.log('[ServiceWorker] Alarme Crítico Recebido em Background:', payload);
+    // MAGIA ANTI-DUPLICATAS (iOS/ANDROID)
+    // Se o payload tiver "notification", o Safari/Chrome já vai desenhar nativamente!
+    if (payload.notification) {
+        console.log('[SW] Bloqueada tentativa de duplicação. O SO assumiu.');
+        return; 
+    }
     
+    // Fallback: Se for puramente "data", desenhamos manualmente
     const data = payload.data || {};
-    
-    const notificationTitle = data.title || "⚠️ ALARME INDUSTRIAL";
-    const notificationOptions = {
+    const title = data.title || "⚠️ ALARME INDUSTRIAL";
+    const options = {
         body: data.body || "Falha detectada no processo.",
         icon: '/icon.png',
         badge: '/icon.png',
-        // Vibração agressiva estilo sirene (vibra-para-vibra-pausa...)
         vibrate: [500, 200, 500, 200, 800, 200, 800],
-        requireInteraction: true, // Bloqueia sumiço da notificação; o operador PRECISA dispensar
-        data: {
-            url: data.url || '/?tab=alarms'
-        },
+        requireInteraction: true,
+        data: { url: data.url || '/?tab=alarms' },
         tag: data.tag || 'scada-alarm-critical'
     };
 
-    return self.registration.showNotification(notificationTitle, notificationOptions);
+    return self.registration.showNotification(title, options);
 });
 
-// 4. TRATAMENTO DO CLIQUE NA NOTIFICAÇÃO
+// ABERTURA IMEDIATA / FOCO NA ABA
 self.addEventListener('notificationclick', function(event) {
     event.notification.close(); 
     
-    const targetUrl = event.notification.data.url || '/?tab=alarms';
+    // Firebase mapeia dados de FCM Options e Payload para cá
+    const targetUrl = event.notification.data?.url || '/?tab=alarms';
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(windowClients) {
-            // Se o App já estiver aberto (mesmo em outra aba), foca nele e muda a aba internamente
             for (let i = 0; i < windowClients.length; i++) {
                 let client = windowClients[i];
                 if (client.url && 'focus' in client) {
@@ -62,7 +61,6 @@ self.addEventListener('notificationclick', function(event) {
                     return client.focus();
                 }
             }
-            // Se o App estiver 100% morto na memória, abre do zero
             if (clients.openWindow) {
                 return clients.openWindow(targetUrl);
             }
