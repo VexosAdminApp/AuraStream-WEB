@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AuraStream WEB</title>
     
-    <!-- PWA e Ícones Corrigidos (iPhone e Android) -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a0a0a">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,73 +12,47 @@
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="icon" type="image/png" href="icon.png">
 
-    <!-- SDKs do Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
         :root {
-            --bg-color: #0a0a0a;
-            --card-bg: #141414;
-            --primary: #00E676;
-            --text-main: #ffffff;
-            --text-muted: #888888;
-            --value-color: #00BCD4;
-            --error-color: #ff3333;
-            --btn-color: #1565C0;
-            --nav-bg: #111111;
+            --bg-color: #0a0a0a; --card-bg: #141414; --primary: #00E676;
+            --text-main: #ffffff; --text-muted: #888888; --value-color: #00BCD4;
+            --error-color: #ff3333; --btn-color: #1565C0; --nav-bg: #111111;
         }
         
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+            background-color: var(--bg-color); color: var(--text-main);
+            font-family: 'Inter', sans-serif; margin: 0; padding: 0;
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
         }
 
         .screen-container {
-            display: none; 
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            padding: 20px;
-            padding-bottom: 90px; /* Espaço para o menu inferior */
+            display: none; flex-direction: column; align-items: center;
+            width: 100%; padding: 20px; padding-bottom: 90px;
         }
 
-        /* --- ANIMAÇÕES DE ALARME --- */
         @keyframes pulse-red {
             0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); background-color: rgba(255, 51, 51, 0.2); }
             50% { box-shadow: 0 0 0 15px rgba(255, 51, 51, 0); background-color: rgba(255, 51, 51, 0.05); }
             100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); background-color: rgba(255, 51, 51, 0.2); }
         }
         .alarm-active {
-            animation: pulse-red 1.5s infinite;
-            border: 1px solid var(--error-color) !important;
-            border-radius: 12px;
-            color: #ffcccc;
+            animation: pulse-red 1.5s infinite; border: 1px solid var(--error-color) !important;
+            border-radius: 12px; color: #ffcccc;
         }
 
-        /* --- TELAS DE LOGIN --- */
         .auth-box {
-            margin-top: 10vh;
-            background: var(--card-bg);
-            padding: 40px 30px;
-            border-radius: 20px;
-            border-top: 4px solid var(--primary);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
+            margin-top: 10vh; background: var(--card-bg); padding: 40px 30px;
+            border-radius: 20px; border-top: 4px solid var(--primary);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6); width: 100%; max-width: 400px; text-align: center;
         }
         .auth-box h2 { color: var(--primary); margin: 0 0 10px 0; font-weight: 800; font-size: 26px;}
         .auth-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 30px; }
@@ -98,9 +71,7 @@
         }
         .btn-secondary { background: var(--btn-color); color: white; }
 
-        /* --- DASHBOARD E ABAS --- */
         #main-app { max-width: 1200px; padding: 15px; padding-bottom: 90px; }
-        
         header { text-align: center; margin-bottom: 25px; width: 100%; }
         h1 { color: var(--primary); margin: 0; font-size: 22px; font-weight: 800;}
         
@@ -115,10 +86,7 @@
         .app-tab.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* GRID DE VARIÁVEIS */
-        .dashboard-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px;
-        }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; }
         .card {
             background-color: var(--card-bg); border-radius: 16px; padding: 20px 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-align: center;
@@ -127,7 +95,6 @@
         .tag-title { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
         .tag-value { font-size: 32px; font-weight: 800; color: var(--value-color); letter-spacing: -1px;}
 
-        /* LISTA DE ALARMES */
         .alarm-item {
             background: #220b0b; border-left: 4px solid var(--error-color);
             padding: 15px; margin-bottom: 12px; border-radius: 8px; text-align: left;
@@ -135,12 +102,11 @@
         .alarm-time { font-size: 11px; color: #ff9999; margin-bottom: 5px; }
         .alarm-msg { font-size: 14px; font-weight: 600; color: white; }
 
-        /* MENU INFERIOR (BOTTOM NAV) */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; width: 100%; height: 70px;
             background: var(--nav-bg); display: flex; justify-content: space-around;
             align-items: center; border-top: 1px solid #222; z-index: 1000;
-            padding-bottom: env(safe-area-inset-bottom); /* Fix para iPhone Notch */
+            padding-bottom: env(safe-area-inset-bottom);
         }
         .nav-item {
             color: #666; display: flex; flex-direction: column; align-items: center;
@@ -150,7 +116,6 @@
         .nav-icon { font-size: 24px; margin-bottom: 4px; }
         .nav-text { font-size: 10px; font-weight: 700; }
 
-        /* BANNER PERMISSÃO */
         #notification-banner {
             background: linear-gradient(135deg, #ff9800, #ff5722); color: white;
             padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 13px;
@@ -161,7 +126,6 @@
 </head>
 <body>
 
-    <!-- TELA DE LOGIN -->
     <div id="login-screen" class="screen-container">
         <div class="auth-box">
             <h2>AuraStream</h2>
@@ -173,7 +137,6 @@
         </div>
     </div>
 
-    <!-- TELA DE SETUP (VÍNCULO) -->
     <div id="setup-screen" class="screen-container">
         <div class="auth-box">
             <h2 style="color: var(--value-color);">Vincular Fábrica</h2>
@@ -184,17 +147,15 @@
         </div>
     </div>
 
-    <!-- TELA PRINCIPAL (APP COM ABAS) -->
     <div id="main-app" class="screen-container">
         <header>
             <h1>AuraStream</h1>
             <div id="plant-status" class="status-badge offline">A LIGAR...</div>
             <div id="notification-banner" onclick="pedirPermissaoNotificacao()">
-                🔔 ATIVAR ALERTAS SONOROS
+                🔔 ATIVAR ALERTAS (MESMO FECHADO)
             </div>
         </header>
 
-        <!-- ABA 1: DASHBOARD -->
         <div id="tab-dashboard" class="app-tab active">
             <div class="dashboard-grid" id="dashboard">
                 <div style="text-align: center; color: var(--text-muted); grid-column: 1 / -1; padding: 40px;">
@@ -203,7 +164,6 @@
             </div>
         </div>
 
-        <!-- ABA 2: ALARMES -->
         <div id="tab-alarms" class="app-tab">
             <div id="alarms-list">
                 <div style="text-align: center; color: var(--text-muted); padding: 40px;">
@@ -212,7 +172,6 @@
             </div>
         </div>
 
-        <!-- ABA 3: AJUSTES -->
         <div id="tab-settings" class="app-tab">
             <div class="auth-box" style="margin-top: 0;">
                 <h3 style="margin-top: 0;">Configurações</h3>
@@ -222,25 +181,20 @@
             </div>
         </div>
 
-        <!-- MENU INFERIOR NATIVO -->
         <div class="bottom-nav">
             <div class="nav-item active" onclick="switchTab('dashboard', this)">
-                <div class="nav-icon">📊</div>
-                <div class="nav-text">DADOS</div>
+                <div class="nav-icon">📊</div><div class="nav-text">DADOS</div>
             </div>
             <div class="nav-item" id="nav-btn-alarms" onclick="switchTab('alarms', this)">
-                <div class="nav-icon">🚨</div>
-                <div class="nav-text">ALERTAS</div>
+                <div class="nav-icon">🚨</div><div class="nav-text">ALERTAS</div>
             </div>
             <div class="nav-item" onclick="switchTab('settings', this)">
-                <div class="nav-icon">⚙️</div>
-                <div class="nav-text">AJUSTES</div>
+                <div class="nav-icon">⚙️</div><div class="nav-text">AJUSTES</div>
             </div>
         </div>
     </div>
 
     <script>
-        // CONFIGURAÇÕES FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyAkoZykh9QaROTsCQC7_qs4NGNl4-cdMBM",
             authDomain: "aurastreamweb.firebaseapp.com",
@@ -254,6 +208,7 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
+        const messaging = firebase.messaging();
 
         let currentPlantId = null;
         let unsubscribeStatus = null;
@@ -261,7 +216,17 @@
         let unsubscribeAlarms = null;
         const appStartTime = Date.now();
 
-        // ROTEAMENTO DE TELAS
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                .then((registration) => {
+                    console.log('SW Registado com Sucesso!');
+                }).catch((err) => {
+                    console.error('Erro SW:', err);
+                });
+            });
+        }
+
         auth.onAuthStateChanged((user) => {
             if (user) {
                 document.getElementById('user-email-display').innerText = user.email;
@@ -286,7 +251,6 @@
             tela.style.display = 'flex';
         }
 
-        // CONTROLADOR DE ABAS (TABS)
         function switchTab(tabName, element) {
             document.querySelectorAll('.app-tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tabName).classList.add('active');
@@ -294,7 +258,6 @@
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
 
-            // Se clicar na aba de alertas, desliga a animação de piscar do ícone
             if(tabName === 'alarms') {
                 document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
             }
@@ -331,9 +294,6 @@
             }
         }
 
-        // =========================================================================
-        // MOTOR DE NOTIFICAÇÕES E ALARMES
-        // =========================================================================
         function verificarPermissaoNotificacao() {
             const banner = document.getElementById('notification-banner');
             if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
@@ -348,65 +308,43 @@
                 Notification.requestPermission().then(permission => {
                     if (permission === "granted") {
                         document.getElementById('notification-banner').style.display = "none";
-                        new Notification("AuraStream", { body: "Notificações ativadas!" });
+                        
+                        // Captura de erro robusta adicionada aqui!
+                        messaging.getToken({ vapidKey: "BFfbj7DDkZcRr9mPu73VCl-sf-yMUNTqtmWk4THLQVhiCq0wNxJpCgbY_JlO1jvldzswLb55OOCpPtTTFLx761w" })
+                        .then((currentToken) => {
+                            if (currentToken && currentPlantId) {
+                                db.ref('plants/' + currentPlantId + '/tokens/' + currentToken).set(true);
+                                alert("Sucesso! Token gerado e guardado. Feche a App e teste o alarme.");
+                            } else {
+                                alert("Permissão dada, mas o token veio vazio. Tente recarregar a App.");
+                            }
+                        }).catch((err) => {
+                            alert("ERRO AO GERAR TOKEN:\n\n" + err);
+                            console.error("Erro FCM:", err);
+                        });
+                    } else {
+                        alert("Permissão de notificações negada pelo utilizador.");
                     }
                 });
+            } else {
+                alert("O seu navegador não suporta notificações Push.");
             }
         }
 
-        function escutarAlarmes(plantId) {
-            const alarmsRef = db.ref('alarms/' + plantId);
-            const alarmsList = document.getElementById('alarms-list');
-            let hasAlarms = false;
+        messaging.onMessage((payload) => {
+            console.log("Recebido em foreground:", payload);
+            document.getElementById('nav-btn-alarms').classList.add('alarm-active');
+            
+            const timeStr = new Date().toLocaleTimeString();
+            const item = document.createElement('div');
+            item.className = 'alarm-item';
+            item.innerHTML = `<div class="alarm-time">${timeStr}</div><div class="alarm-msg">${payload.notification.body}</div>`;
+            document.getElementById('alarms-list').prepend(item);
+        });
 
-            unsubscribeAlarms = alarmsRef.orderByChild('timestamp').startAt(appStartTime).on('child_added', (snapshot) => {
-                const alarm = snapshot.val();
-                if(alarm && alarm.timestamp >= appStartTime) {
-                    if(!hasAlarms) { alarmsList.innerHTML = ''; hasAlarms = true; } // Limpa a msg vazia
-                    
-                    // Dispara notificação no telemóvel
-                    dispararAlarmeTelemovel(alarm);
-                    
-                    // Faz o ícone de alertas no rodapé piscar em vermelho!
-                    document.getElementById('nav-btn-alarms').classList.add('alarm-active');
-
-                    // Adiciona na Lista de Histórico
-                    const timeStr = new Date(alarm.timestamp).toLocaleTimeString();
-                    const item = document.createElement('div');
-                    item.className = 'alarm-item';
-                    item.innerHTML = `
-                        <div class="alarm-time">${timeStr}</div>
-                        <div class="alarm-msg">🛑 ${alarm.tag}: ${alarm.value}</div>
-                        <div style="font-size: 12px; color: #ccc; margin-top:4px;">${alarm.message}</div>
-                    `;
-                    alarmsList.prepend(item); // Adiciona no topo
-                }
-            });
-        }
-
-        function dispararAlarmeTelemovel(alarm) {
-            const titulo = "⚠️ ALARME SCADA";
-            const corpo = `${alarm.tag}: ${alarm.value}`;
-
-            if ("Notification" in window && Notification.permission === "granted") {
-                navigator.serviceWorker.ready.then(function(registration) {
-                    registration.showNotification(titulo, {
-                        body: corpo, icon: "icon.png", vibrate: [300, 100, 400, 100, 400], requireInteraction: true
-                    });
-                }).catch(() => {
-                    new Notification(titulo, { body: corpo, vibrate: [300, 100, 400] });
-                });
-            }
-        }
-
-        // =========================================================================
-        // MOTOR DE MONITORAMENTO DE DADOS
-        // =========================================================================
         function iniciarMonitoramento(plantId) {
             const plantRef = db.ref('plants/' + plantId);
             const dashboard = document.getElementById('dashboard');
-            
-            escutarAlarmes(plantId);
 
             unsubscribeStatus = plantRef.child('online').on('value', (snapshot) => {
                 const isOnline = snapshot.val();
@@ -421,7 +359,6 @@
             unsubscribeTags = plantRef.child('tags').on('value', (snapshot) => {
                 const tags = snapshot.val();
                 if (tags) {
-                    // Limpa a msg "Aguardando" se ainda existir
                     if(dashboard.innerHTML.includes("A aguardar")) dashboard.innerHTML = '';
                     
                     for (const [tagName, tagValue] of Object.entries(tags)) {
@@ -445,17 +382,7 @@
             if (currentPlantId) {
                 db.ref('plants/' + currentPlantId + '/online').off('value', unsubscribeStatus);
                 db.ref('plants/' + currentPlantId + '/tags').off('value', unsubscribeTags);
-                db.ref('alarms/' + currentPlantId).off('child_added', unsubscribeAlarms);
             }
-        }
-
-        // Service Worker Virtual (Ativa o PWA de instalação no telemóvel)
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                const swCode = `self.addEventListener('fetch', function() {});`;
-                const blob = new Blob([swCode], {type: 'application/javascript'});
-                navigator.serviceWorker.register(URL.createObjectURL(blob));
-            });
         }
     </script>
 </body>
