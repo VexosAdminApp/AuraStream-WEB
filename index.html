@@ -25,60 +25,33 @@
             --text-main: #ffffff; --text-muted: #888888; --value-color: #00BCD4;
             --error-color: #ff3333; --btn-color: #1565C0; --nav-bg: #111111;
         }
-        
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
         body {
             background-color: var(--bg-color); color: var(--text-main);
             font-family: 'Inter', sans-serif; margin: 0; padding: 0;
             display: flex; flex-direction: column; align-items: center; min-height: 100vh;
         }
-
-        .screen-container {
-            display: none; flex-direction: column; align-items: center;
-            width: 100%; padding: 20px; padding-bottom: 90px;
-        }
+        .screen-container { display: none; flex-direction: column; align-items: center; width: 100%; padding: 20px; padding-bottom: 90px; }
 
         @keyframes pulse-red {
             0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); background-color: rgba(255, 51, 51, 0.2); }
             50% { box-shadow: 0 0 0 15px rgba(255, 51, 51, 0); background-color: rgba(255, 51, 51, 0.05); }
             100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); background-color: rgba(255, 51, 51, 0.2); }
         }
-        .alarm-active {
-            animation: pulse-red 1.5s infinite; border: 1px solid var(--error-color) !important;
-            border-radius: 12px; color: #ffcccc;
-        }
+        .alarm-active { animation: pulse-red 1.5s infinite; border: 1px solid var(--error-color) !important; border-radius: 12px; color: #ffcccc; }
 
-        .auth-box {
-            margin-top: 10vh; background: var(--card-bg); padding: 40px 30px;
-            border-radius: 20px; border-top: 4px solid var(--primary);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6); width: 100%; max-width: 400px; text-align: center;
-        }
+        .auth-box { margin-top: 10vh; background: var(--card-bg); padding: 40px 30px; border-radius: 20px; border-top: 4px solid var(--primary); box-shadow: 0 20px 40px rgba(0,0,0,0.6); width: 100%; max-width: 400px; text-align: center; }
         .auth-box h2 { color: var(--primary); margin: 0 0 10px 0; font-weight: 800; font-size: 26px;}
         .auth-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 30px; }
-        
-        .input-field {
-            width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 10px;
-            border: 1px solid #333; background: #1f1f1f; color: white;
-            font-size: 16px; outline: none; transition: border 0.3s;
-        }
+        .input-field { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #333; background: #1f1f1f; color: white; font-size: 16px; outline: none; transition: border 0.3s; }
         .input-field:focus { border-color: var(--primary); }
-        
-        .btn-primary {
-            width: 100%; padding: 15px; background: var(--primary); color: #000;
-            font-weight: 800; border: none; border-radius: 10px; cursor: pointer;
-            font-size: 16px; margin-top: 10px;
-        }
+        .btn-primary { width: 100%; padding: 15px; background: var(--primary); color: #000; font-weight: 800; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; margin-top: 10px; }
         .btn-secondary { background: var(--btn-color); color: white; }
 
         #main-app { max-width: 1200px; padding: 15px; padding-bottom: 90px; }
         header { text-align: center; margin-bottom: 25px; width: 100%; }
         h1 { color: var(--primary); margin: 0; font-size: 22px; font-weight: 800;}
-        
-        .status-badge {
-            display: inline-block; padding: 6px 14px; border-radius: 20px;
-            font-size: 11px; font-weight: 800; margin-top: 8px; letter-spacing: 0.5px;
-        }
+        .status-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 800; margin-top: 8px; letter-spacing: 0.5px; }
         .online { background-color: rgba(0, 230, 118, 0.2); color: var(--primary); border: 1px solid var(--primary);}
         .offline { background-color: rgba(255, 68, 68, 0.2); color: var(--error-color); border: 1px solid var(--error-color);}
 
@@ -87,41 +60,21 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; }
-        .card {
-            background-color: var(--card-bg); border-radius: 16px; padding: 20px 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-align: center;
-            border: 1px solid #222; position: relative;
-        }
+        .card { background-color: var(--card-bg); border-radius: 16px; padding: 20px 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-align: center; border: 1px solid #222; position: relative; }
         .tag-title { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
         .tag-value { font-size: 32px; font-weight: 800; color: var(--value-color); letter-spacing: -1px;}
 
-        .alarm-item {
-            background: #220b0b; border-left: 4px solid var(--error-color);
-            padding: 15px; margin-bottom: 12px; border-radius: 8px; text-align: left;
-        }
+        .alarm-item { background: #220b0b; border-left: 4px solid var(--error-color); padding: 15px; margin-bottom: 12px; border-radius: 8px; text-align: left; }
         .alarm-time { font-size: 11px; color: #ff9999; margin-bottom: 5px; }
         .alarm-msg { font-size: 14px; font-weight: 600; color: white; }
 
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 70px;
-            background: var(--nav-bg); display: flex; justify-content: space-around;
-            align-items: center; border-top: 1px solid #222; z-index: 1000;
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-        .nav-item {
-            color: #666; display: flex; flex-direction: column; align-items: center;
-            justify-content: center; width: 33%; height: 100%; cursor: pointer; transition: 0.2s;
-        }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #222; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { color: #666; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 33%; height: 100%; cursor: pointer; transition: 0.2s; }
         .nav-item.active { color: var(--primary); }
         .nav-icon { font-size: 24px; margin-bottom: 4px; }
         .nav-text { font-size: 10px; font-weight: 700; }
 
-        #notification-banner {
-            background: linear-gradient(135deg, #ff9800, #ff5722); color: white;
-            padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 13px;
-            font-weight: 800; display: none; cursor: pointer; text-align: center;
-            box-shadow: 0 4px 10px rgba(255, 152, 0, 0.4);
-        }
+        #notification-banner { background: linear-gradient(135deg, #ff9800, #ff5722); color: white; padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 13px; font-weight: 800; display: none; cursor: pointer; text-align: center; box-shadow: 0 4px 10px rgba(255, 152, 0, 0.4); }
     </style>
 </head>
 <body>
@@ -151,8 +104,8 @@
         <header>
             <h1>AuraStream</h1>
             <div id="plant-status" class="status-badge offline">A LIGAR...</div>
-            <div id="notification-banner" onclick="pedirPermissaoNotificacao()">
-                🔔 ATIVAR ALERTAS (MESMO FECHADO)
+            <div id="notification-banner" onclick="pedirPermissaoEGerarToken(true)">
+                🔔 ATIVAR ALERTAS INDUSTRIAIS
             </div>
         </header>
 
@@ -166,8 +119,8 @@
 
         <div id="tab-alarms" class="app-tab">
             <div id="alarms-list">
-                <div style="text-align: center; color: var(--text-muted); padding: 40px;">
-                    Sem alarmes ativos nesta sessão.
+                <div style="text-align: center; color: var(--text-muted); padding: 40px;" id="alarms-empty">
+                    Sem alarmes críticos ativos nesta sessão.
                 </div>
             </div>
         </div>
@@ -182,19 +135,20 @@
         </div>
 
         <div class="bottom-nav">
-            <div class="nav-item active" onclick="switchTab('dashboard', this)">
+            <div class="nav-item active" onclick="switchTab('dashboard', this)" id="nav-btn-dashboard">
                 <div class="nav-icon">📊</div><div class="nav-text">DADOS</div>
             </div>
             <div class="nav-item" id="nav-btn-alarms" onclick="switchTab('alarms', this)">
                 <div class="nav-icon">🚨</div><div class="nav-text">ALERTAS</div>
             </div>
-            <div class="nav-item" onclick="switchTab('settings', this)">
+            <div class="nav-item" onclick="switchTab('settings', this)" id="nav-btn-settings">
                 <div class="nav-icon">⚙️</div><div class="nav-text">AJUSTES</div>
             </div>
         </div>
     </div>
 
     <script>
+        // CONFIGURAÇÕES FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyAkoZykh9QaROTsCQC7_qs4NGNl4-cdMBM",
             authDomain: "aurastreamweb.firebaseapp.com",
@@ -204,6 +158,7 @@
             messagingSenderId: "380237625698",
             appId: "1:380237625698:web:db077e82d8ca77085cd43b"
         };
+        const VAPID_KEY = "BFfbj7DDkZcRr9mPu73VCl-sf-yMUNTqtmWk4THLQVhiCq0wNxJpCgbY_JlO1jvldzswLb55OOCpPtTTFLx761w";
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
@@ -213,20 +168,38 @@
         let currentPlantId = null;
         let unsubscribeStatus = null;
         let unsubscribeTags = null;
-        let unsubscribeAlarms = null;
-        const appStartTime = Date.now();
-
+        
+        // REGISTRO ROBUSTO DO SERVICE WORKER NA RAIZ
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' })
                 .then((registration) => {
-                    console.log('SW Registado com Sucesso!');
-                }).catch((err) => {
-                    console.error('Erro SW:', err);
-                });
+                    console.log('SW Registrado no Escopo:', registration.scope);
+                    registration.update(); 
+                }).catch((err) => console.error('Erro ao registrar SW:', err));
+            });
+
+            // Escuta mensagens vindas do Service Worker (ex: Clique na notificação em background)
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'SWITCH_TAB') {
+                    const navBtn = document.getElementById('nav-btn-' + event.data.tab);
+                    if(navBtn) switchTab(event.data.tab, navBtn);
+                }
             });
         }
 
+        // LÓGICA DE ABERTURA VIA URL (Se clicou na notificação com o app totalmente fechado)
+        window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('tab') === 'alarms') {
+                setTimeout(() => {
+                    const navBtn = document.getElementById('nav-btn-alarms');
+                    if(navBtn) switchTab('alarms', navBtn);
+                }, 500); // pequeno delay para garantir que o DOM carregou
+            }
+        };
+
+        // ROTEAMENTO E AUTENTICAÇÃO
         auth.onAuthStateChanged((user) => {
             if (user) {
                 document.getElementById('user-email-display').innerText = user.email;
@@ -235,7 +208,13 @@
                         currentPlantId = snapshot.val();
                         mostrarTela(document.getElementById('main-app'));
                         iniciarMonitoramento(currentPlantId);
-                        verificarPermissaoNotificacao();
+                        
+                        // Atualiza token silenciosamente se já tem permissão
+                        if (Notification.permission === "granted") {
+                            pedirPermissaoEGerarToken(false);
+                        } else {
+                            document.getElementById('notification-banner').style.display = "block";
+                        }
                     } else {
                         mostrarTela(document.getElementById('setup-screen'));
                     }
@@ -281,12 +260,14 @@
                 currentPlantId = pid;
                 mostrarTela(document.getElementById('main-app'));
                 iniciarMonitoramento(currentPlantId);
-                verificarPermissaoNotificacao();
+                if (Notification.permission !== "granted") {
+                    document.getElementById('notification-banner').style.display = "block";
+                }
             });
         }
 
         function desvincularPlanta() {
-            if(confirm("Desvincular esta fábrica? Terá que inserir um ID novamente.")) {
+            if(confirm("Desvincular esta fábrica?")) {
                 pararMonitoramento();
                 db.ref('users/' + auth.currentUser.uid + '/plant_id').remove().then(() => {
                     mostrarTela(document.getElementById('setup-screen'));
@@ -294,59 +275,63 @@
             }
         }
 
-        function verificarPermissaoNotificacao() {
-            const banner = document.getElementById('notification-banner');
-            if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-                banner.style.display = "block";
-            } else {
-                banner.style.display = "none";
+        // ==========================================================
+        // SISTEMA ESTÁVEL DE GERAÇÃO DE TOKEN (VAPID)
+        // ==========================================================
+        function pedirPermissaoEGerarToken(mostrarAlertas = false) {
+            if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+                if(mostrarAlertas) alert("Navegador não suporta Push.");
+                return;
             }
-        }
 
-        function pedirPermissaoNotificacao() {
-            if ("Notification" in window) {
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        document.getElementById('notification-banner').style.display = "none";
-                        
-                        // NOVO: Espera que o Service Worker esteja 100% ativo antes de pedir o Token
-                        navigator.serviceWorker.ready.then((registration) => {
-                            messaging.getToken({ 
-                                vapidKey: "BFfbj7DDkZcRr9mPu73VCl-sf-yMUNTqtmWk4THLQVhiCq0wNxJpCgbY_JlO1jvldzswLb55OOCpPtTTFLx761w",
-                                serviceWorkerRegistration: registration 
-                            })
-                            .then((currentToken) => {
-                                if (currentToken && currentPlantId) {
-                                    db.ref('plants/' + currentPlantId + '/tokens/' + currentToken).set(true);
-                                    alert("Sucesso! Token gerado e guardado. Feche a App e teste o alarme.");
-                                } else {
-                                    alert("Permissão dada, mas o token veio vazio. Tente recarregar a App.");
-                                }
-                            }).catch((err) => {
-                                alert("ERRO AO GERAR TOKEN:\n\n" + err);
-                                console.error("Erro FCM:", err);
-                            });
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    document.getElementById('notification-banner').style.display = "none";
+                    
+                    navigator.serviceWorker.ready.then((registration) => {
+                        messaging.getToken({ 
+                            vapidKey: VAPID_KEY,
+                            serviceWorkerRegistration: registration 
+                        }).then((currentToken) => {
+                            if (currentToken && currentPlantId) {
+                                // Salva o token na planta vinculada
+                                db.ref('plants/' + currentPlantId + '/tokens/' + currentToken).set(true);
+                                if(mostrarAlertas) alert("Alertas de Segurança ativados com sucesso!");
+                            }
+                        }).catch((err) => {
+                            if(mostrarAlertas) alert("Erro ao gerar chave de segurança: " + err);
+                            console.error("Erro getToken:", err);
                         });
-                    } else {
-                        alert("Permissão de notificações negada pelo utilizador.");
-                    }
-                });
-            } else {
-                alert("O seu navegador não suporta notificações Push.");
-            }
+                    });
+                } else {
+                    if(mostrarAlertas) alert("Permissão negada pelo operador.");
+                }
+            });
         }
 
+        // ==========================================================
+        // ESCUTA NO FOREGROUND (App Aberto) - Extraindo do payload.data
+        // ==========================================================
         messaging.onMessage((payload) => {
-            console.log("Recebido em foreground:", payload);
+            console.log("Recebido em FOREGROUND:", payload);
             document.getElementById('nav-btn-alarms').classList.add('alarm-active');
             
+            const data = payload.data || {};
             const timeStr = new Date().toLocaleTimeString();
             const item = document.createElement('div');
             item.className = 'alarm-item';
-            item.innerHTML = `<div class="alarm-time">${timeStr}</div><div class="alarm-msg">${payload.notification.body}</div>`;
+            
+            // Lógica para esconder a mensagem "Sem alarmes"
+            const emptyMsg = document.getElementById('alarms-empty');
+            if(emptyMsg) emptyMsg.style.display = 'none';
+
+            item.innerHTML = `<div class="alarm-time">${timeStr}</div><div class="alarm-msg">${data.body || 'Alarme disparado'}</div>`;
             document.getElementById('alarms-list').prepend(item);
         });
 
+        // ==========================================================
+        // MOTOR DE DADOS
+        // ==========================================================
         function iniciarMonitoramento(plantId) {
             const plantRef = db.ref('plants/' + plantId);
             const dashboard = document.getElementById('dashboard');
