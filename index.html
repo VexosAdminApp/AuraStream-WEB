@@ -309,18 +309,23 @@
                     if (permission === "granted") {
                         document.getElementById('notification-banner').style.display = "none";
                         
-                        // Captura de erro robusta adicionada aqui!
-                        messaging.getToken({ vapidKey: "BFfbj7DDkZcRr9mPu73VCl-sf-yMUNTqtmWk4THLQVhiCq0wNxJpCgbY_JlO1jvldzswLb55OOCpPtTTFLx761w" })
-                        .then((currentToken) => {
-                            if (currentToken && currentPlantId) {
-                                db.ref('plants/' + currentPlantId + '/tokens/' + currentToken).set(true);
-                                alert("Sucesso! Token gerado e guardado. Feche a App e teste o alarme.");
-                            } else {
-                                alert("Permissão dada, mas o token veio vazio. Tente recarregar a App.");
-                            }
-                        }).catch((err) => {
-                            alert("ERRO AO GERAR TOKEN:\n\n" + err);
-                            console.error("Erro FCM:", err);
+                        // NOVO: Espera que o Service Worker esteja 100% ativo antes de pedir o Token
+                        navigator.serviceWorker.ready.then((registration) => {
+                            messaging.getToken({ 
+                                vapidKey: "BFfbj7DDkZcRr9mPu73VCl-sf-yMUNTqtmWk4THLQVhiCq0wNxJpCgbY_JlO1jvldzswLb55OOCpPtTTFLx761w",
+                                serviceWorkerRegistration: registration 
+                            })
+                            .then((currentToken) => {
+                                if (currentToken && currentPlantId) {
+                                    db.ref('plants/' + currentPlantId + '/tokens/' + currentToken).set(true);
+                                    alert("Sucesso! Token gerado e guardado. Feche a App e teste o alarme.");
+                                } else {
+                                    alert("Permissão dada, mas o token veio vazio. Tente recarregar a App.");
+                                }
+                            }).catch((err) => {
+                                alert("ERRO AO GERAR TOKEN:\n\n" + err);
+                                console.error("Erro FCM:", err);
+                            });
                         });
                     } else {
                         alert("Permissão de notificações negada pelo utilizador.");
