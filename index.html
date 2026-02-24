@@ -164,10 +164,6 @@
         const auth = firebase.auth();
         const db = firebase.database();
         
-        // ==========================================================
-        // CORREÇÃO CRÍTICA (IPHONE/SAFARI): Escudo Anti-Crash
-        // O iOS bloqueia o objeto messaging se não estiver na Home Screen.
-        // ==========================================================
         let messaging = null;
         try {
             if (firebase.messaging.isSupported()) {
@@ -176,7 +172,7 @@
                 console.warn("⚠️ FCM não suportado nativamente neste browser.");
             }
         } catch (err) {
-            console.error("⚠️ Bloqueio do iOS detetado no Firebase Messaging.", err);
+            console.error("⚠️ Bloqueio detetado no Firebase Messaging.", err);
         }
 
         let currentPlantId = null;
@@ -184,7 +180,7 @@
         let unsubscribeTags = null;
         
         // ==========================================================
-        // REGISTRO DO SERVICE WORKER (Ignora no Preview do Chat)
+        // REGISTRO DO SERVICE WORKER E COMUNICAÇÃO DE BACKGROUND
         // ==========================================================
         if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
             window.addEventListener('load', () => {
@@ -195,7 +191,7 @@
                 }).catch((err) => console.error('Erro ao registrar SW:', err));
             });
 
-            // Escuta mensagens vindas do Service Worker (ex: Clique na notificação em background)
+            // Escuta mensagens vindas do Service Worker (Quando o usuário clica na notificação)
             navigator.serviceWorker.addEventListener('message', (event) => {
                 if (event.data && event.data.type === 'SWITCH_TAB') {
                     const navBtn = document.getElementById('nav-btn-' + event.data.tab);
@@ -204,14 +200,14 @@
             });
         }
 
-        // LÓGICA DE ABERTURA VIA URL (Se clicou na notificação com o app totalmente fechado)
+        // Lógica de abertura via URL com parâmetros
         window.onload = () => {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('tab') === 'alarms') {
                 setTimeout(() => {
                     const navBtn = document.getElementById('nav-btn-alarms');
                     if(navBtn) switchTab('alarms', navBtn);
-                }, 500); // pequeno delay para garantir que o DOM carregou
+                }, 500); 
             }
         };
 
@@ -225,7 +221,7 @@
                         mostrarTela(document.getElementById('main-app'));
                         iniciarMonitoramento(currentPlantId);
                         
-                        // Atualiza token silenciosamente se já tem permissão
+                        // Sempre valida o token de forma transparente se já tiver permissão
                         if (Notification.permission === "granted") {
                             pedirPermissaoEGerarToken(false);
                         } else {
@@ -277,7 +273,6 @@
                 mostrarTela(document.getElementById('main-app'));
                 iniciarMonitoramento(currentPlantId);
                 
-                // Se vincular com sucesso, solicita o token ou gera na hora
                 if (Notification.permission !== "granted") {
                     document.getElementById('notification-banner').style.display = "block";
                 } else {
@@ -296,11 +291,11 @@
         }
 
         // ==========================================================
-        // SISTEMA ESTÁVEL DE GERAÇÃO DE TOKEN (VAPID)
+        // GERAÇÃO E ATUALIZAÇÃO SEGURA DO TOKEN (INDUSTRIAL)
         // ==========================================================
         function pedirPermissaoEGerarToken(mostrarAlertas = false) {
             if (!("Notification" in window) || !("serviceWorker" in navigator) || !messaging) {
-                if(mostrarAlertas) alert("O seu telemóvel não suporta Alarmes em Segundo Plano. (Se usar iPhone, tem de 'Adicionar ao Ecrã Principal' primeiro!)");
+                if(mostrarAlertas) alert("Navegador não suporta Push Industrial.");
                 return;
             }
 
@@ -309,21 +304,19 @@
                     document.getElementById('notification-banner').style.display = "none";
                     
                     navigator.serviceWorker.ready.then((registration) => {
-                        // Pequeno atraso para garantir que o SW instalou e ativou completamente
-                        setTimeout(() => {
-                            messaging.getToken({ 
-                                vapidKey: VAPID_KEY,
-                                serviceWorkerRegistration: registration 
-                            }).then((currentToken) => {
-                                if (currentToken && currentPlantId) {
-                                    db.ref('plants/' + currentPlantId + '/tokens/' + currentToken).set(true);
-                                    if(mostrarAlertas) alert("Alertas de Segurança ativados com sucesso! Pode fechar o ecrã.");
-                                }
-                            }).catch((err) => {
-                                if(mostrarAlertas) alert("Erro ao contactar servidor da Google/Apple: " + err);
-                                console.error("Erro getToken:", err);
-                            });
-                        }, 500); // 500ms de margem de segurança
+                        messaging.getToken({ 
+                            vapidKey: VAPID_KEY,
+                            serviceWorkerRegistration: registration 
+                        }).then((currentToken) => {
+                            if (currentToken && currentPlantId) {
+                                // Vincula o token à planta no DB
+                                db.ref('plants/' + currentPlantId + '/tokens/' + currentToken).set(true);
+                                if(mostrarAlertas) alert("Alertas Críticos ativados com sucesso! Pode fechar o app.");
+                            }
+                        }).catch((err) => {
+                            if(mostrarAlertas) alert("Erro ao contactar servidor FCM: " + err);
+                            console.error("Erro getToken:", err);
+                        });
                     });
                 } else {
                     if(mostrarAlertas) alert("Permissão negada pelo operador.");
@@ -332,16 +325,17 @@
         }
 
         // ==========================================================
-        // ESCUTA NO FOREGROUND (App Aberto)
+        // ESCUTA NO FOREGROUND (Aplicativo aberto na tela do usuário)
         // ==========================================================
         if (messaging) {
             messaging.onMessage((payload) => {
                 console.log("Recebido em FOREGROUND:", payload);
                 document.getElementById('nav-btn-alarms').classList.add('alarm-active');
                 
-                const data = payload.data || payload.notification || {};
+                // Agora o backend nos enviará APENAS payload.data
+                const data = payload.data || {};
                 const title = data.title || "⚠️ ALARME INDUSTRIAL";
-                const body = data.body || "Alarme disparado";
+                const body = data.body || "Falha detectada";
                 const timeStr = new Date().toLocaleTimeString();
                 
                 const item = document.createElement('div');
@@ -353,14 +347,16 @@
                 item.innerHTML = `<div class="alarm-time">${timeStr}</div><div class="alarm-msg">${body}</div>`;
                 document.getElementById('alarms-list').prepend(item);
 
-                // Força o banner e a vibração MESMO com o app aberto!
+                // Exibe a notificação com vibração nativa forçada mesmo com o App Aberto
                 if ("Notification" in window && Notification.permission === "granted") {
                     navigator.serviceWorker.ready.then(function(registration) {
                         registration.showNotification(title, {
                             body: body,
                             icon: "icon.png",
                             vibrate: [500, 200, 500, 200, 800, 200, 800],
-                            tag: data.tag || 'scada-alarm-foreground'
+                            requireInteraction: true,
+                            data: { url: data.url || '/?tab=alarms' },
+                            tag: data.tag || 'scada-alarm'
                         });
                     });
                 }
@@ -368,7 +364,7 @@
         }
 
         // ==========================================================
-        // MOTOR DE DADOS
+        // LÓGICA DE DADOS EM TEMPO REAL
         // ==========================================================
         function iniciarMonitoramento(plantId) {
             const plantRef = db.ref('plants/' + plantId);
