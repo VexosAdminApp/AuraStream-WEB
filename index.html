@@ -306,6 +306,23 @@
 
         // ==========================================================
         // GERAÇÃO E ATUALIZAÇÃO SEGURA DO TOKEN (INDUSTRIAL)
+        // ==========================================================
+        function pedirPermissaoEGerarToken(mostrarAlertas = false) {
+            if (!("Notification" in window) || !("serviceWorker" in navigator) || !messaging) {
+                if(mostrarAlertas) alert("Navegador não suporta Push Industrial.");
+                return;
+            }
+
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    document.getElementById('notification-banner').style.display = "none";
+                    
+                    navigator.serviceWorker.ready.then((registration) => {
+                        messaging.getToken({ 
+                            vapidKey: VAPID_KEY,
+                            serviceWorkerRegistration: registration 
+                        }).then((currentToken) => {
+                            if (currentToken && currentPlantId && auth.currentUser) {
                                 // Associando token ao usuário logado permite vários dispositivos sem lixo
                                 db.ref('plants/' + currentPlantId + '/tokens/' + currentToken).set(auth.currentUser.uid);
                                 if(mostrarAlertas) alert("Alertas ativados. O seu dispositivo está registrado de forma segura.");
