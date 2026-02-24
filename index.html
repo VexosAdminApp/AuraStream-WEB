@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AuraStream WEB</title>
+    <title>AuraStream WEB - Industrial</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a0a0a">
@@ -120,7 +120,7 @@
         <div id="tab-alarms" class="app-tab">
             <div id="alarms-list">
                 <div style="text-align: center; color: var(--text-muted); padding: 40px;" id="alarms-empty">
-                    Sem alarmes críticos ativos nesta sessão.
+                    Carregando histórico de alarmes...
                 </div>
             </div>
         </div>
@@ -178,20 +178,17 @@
         let currentPlantId = null;
         let unsubscribeStatus = null;
         let unsubscribeTags = null;
+        let unsubscribeAlarms = null;
         
-        // ==========================================================
-        // REGISTRO DO SERVICE WORKER E COMUNICAÇÃO DE BACKGROUND
-        // ==========================================================
+        // REGISTRO ROBUSTO DO SERVICE WORKER
         if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' })
                 .then((registration) => {
-                    console.log('SW Registrado no Escopo:', registration.scope);
                     registration.update(); 
-                }).catch((err) => console.error('Erro ao registrar SW:', err));
+                });
             });
 
-            // Escuta mensagens vindas do Service Worker (Quando o usuário clica na notificação)
             navigator.serviceWorker.addEventListener('message', (event) => {
                 if (event.data && event.data.type === 'SWITCH_TAB') {
                     const navBtn = document.getElementById('nav-btn-' + event.data.tab);
@@ -200,7 +197,7 @@
             });
         }
 
-        // Lógica de abertura via URL com parâmetros
+        // ABERTURA VIA URL
         window.onload = () => {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('tab') === 'alarms') {
@@ -221,7 +218,6 @@
                         mostrarTela(document.getElementById('main-app'));
                         iniciarMonitoramento(currentPlantId);
                         
-                        // Sempre valida o token de forma transparente se já tiver permissão
                         if (Notification.permission === "granted") {
                             pedirPermissaoEGerarToken(false);
                         } else {
@@ -245,10 +241,8 @@
         function switchTab(tabName, element) {
             document.querySelectorAll('.app-tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tabName).classList.add('active');
-            
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
-
             if(tabName === 'alarms') {
                 document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
             }
@@ -290,9 +284,7 @@
             }
         }
 
-        // ==========================================================
-        // GERAÇÃO E ATUALIZAÇÃO SEGURA DO TOKEN (INDUSTRIAL)
-        // ==========================================================
+        // GERAÇÃO DE TOKEN VINCULADA AO USUÁRIO
         function pedirPermissaoEGerarToken(mostrarAlertas = false) {
             if (!("Notification" in window) || !("serviceWorker" in navigator) || !messaging) {
                 if(mostrarAlertas) alert("Navegador não suporta Push Industrial.");
@@ -308,14 +300,13 @@
                             vapidKey: VAPID_KEY,
                             serviceWorkerRegistration: registration 
                         }).then((currentToken) => {
-                            if (currentToken && currentPlantId) {
-                                // Vincula o token à planta no DB
-                                db.ref('plants/' + currentPlantId + '/tokens/' + currentToken).set(true);
-                                if(mostrarAlertas) alert("Alertas Críticos ativados com sucesso! Pode fechar o app.");
+                            if (currentToken && currentPlantId && auth.currentUser) {
+                                // Associando token ao usuário logado permite vários dispositivos sem lixo
+                                db.ref('plants/' + currentPlantId + '/tokens/' + currentToken).set(auth.currentUser.uid);
+                                if(mostrarAlertas) alert("Alertas ativados. O seu dispositivo está registrado de forma segura.");
                             }
                         }).catch((err) => {
-                            if(mostrarAlertas) alert("Erro ao contactar servidor FCM: " + err);
-                            console.error("Erro getToken:", err);
+                            if(mostrarAlertas) alert("Erro ao contactar FCM: " + err);
                         });
                     });
                 } else {
@@ -324,53 +315,58 @@
             });
         }
 
-        // ==========================================================
-        // ESCUTA NO FOREGROUND (Aplicativo aberto na tela do usuário)
-        // ==========================================================
+        // ESCUTA NO FOREGROUND E VIBRAÇÃO FORÇADA
         if (messaging) {
             messaging.onMessage((payload) => {
-                console.log("Recebido em FOREGROUND:", payload);
                 document.getElementById('nav-btn-alarms').classList.add('alarm-active');
-                
-                // Agora o backend nos enviará APENAS payload.data
                 const data = payload.data || {};
-                const title = data.title || "⚠️ ALARME INDUSTRIAL";
-                const body = data.body || "Falha detectada";
-                const timeStr = new Date().toLocaleTimeString();
                 
-                const item = document.createElement('div');
-                item.className = 'alarm-item';
-                
-                const emptyMsg = document.getElementById('alarms-empty');
-                if(emptyMsg) emptyMsg.style.display = 'none';
-
-                item.innerHTML = `<div class="alarm-time">${timeStr}</div><div class="alarm-msg">${body}</div>`;
-                document.getElementById('alarms-list').prepend(item);
-
-                // Exibe a notificação com vibração nativa forçada mesmo com o App Aberto
-                if ("Notification" in window && Notification.permission === "granted") {
+                if ("Notification" in window && Notification.permission === "granted" && document.visibilityState === "visible") {
                     navigator.serviceWorker.ready.then(function(registration) {
-                        registration.showNotification(title, {
-                            body: body,
+                        registration.showNotification(data.title || "⚠️ ALARME INDUSTRIAL", {
+                            body: data.body || "Alarme disparado",
                             icon: "icon.png",
-                            vibrate: [500, 200, 500, 200, 800, 200, 800],
+                            vibrate: [500, 200, 500, 200, 800],
                             requireInteraction: true,
-                            data: { url: data.url || '/?tab=alarms' },
-                            tag: data.tag || 'scada-alarm'
+                            data: { url: '/?tab=alarms' }
                         });
                     });
                 }
+                // O banco de dados vai se encarregar de popular a lista na tela,
+                // portanto não precisamos criar elemento HTML manual aqui.
             });
         }
 
-        // ==========================================================
-        // LÓGICA DE DADOS EM TEMPO REAL
-        // ==========================================================
+        // MOTOR DE DADOS & PERSISTÊNCIA DE ALARMES
         function iniciarMonitoramento(plantId) {
-            const plantRef = db.ref('plants/' + plantId);
             const dashboard = document.getElementById('dashboard');
+            const alarmsList = document.getElementById('alarms-list');
 
-            unsubscribeStatus = plantRef.child('online').on('value', (snapshot) => {
+            // --- 1. CARREGAMENTO DOS DADOS DO BANCO (Corrige o problema de tela vazia) ---
+            const alarmsRef = db.ref('alarms/' + plantId).orderByChild('timestamp').limitToLast(30);
+            unsubscribeAlarms = alarmsRef.on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    let htmlElements = '';
+                    // Firebase entrega em ordem, varremos para recriar a lista
+                    snapshot.forEach((child) => {
+                        const alarm = child.val();
+                        const timeStr = new Date(alarm.timestamp).toLocaleString('pt-BR');
+                        htmlElements = `
+                            <div class="alarm-item">
+                                <div class="alarm-time">${timeStr}</div>
+                                <div class="alarm-msg">🛑 ${alarm.tag.replace(/_/g, ' ')}: ${alarm.value}</div>
+                                <div style="font-size: 12px; color: #ccc; margin-top:4px;">${alarm.message || ''}</div>
+                            </div>
+                        ` + htmlElements; // Prepend
+                    });
+                    alarmsList.innerHTML = htmlElements;
+                } else {
+                    alarmsList.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px;" id="alarms-empty">Nenhum alarme crítico registado.</div>';
+                }
+            });
+
+            // --- 2. STATUS ONLINE/OFFLINE ---
+            unsubscribeStatus = db.ref('plants/' + plantId + '/online').on('value', (snapshot) => {
                 const isOnline = snapshot.val();
                 const ps = document.getElementById('plant-status');
                 if (isOnline) {
@@ -380,7 +376,8 @@
                 }
             });
 
-            unsubscribeTags = plantRef.child('tags').on('value', (snapshot) => {
+            // --- 3. TAGS EM TEMPO REAL ---
+            unsubscribeTags = db.ref('plants/' + plantId + '/tags').on('value', (snapshot) => {
                 const tags = snapshot.val();
                 if (tags) {
                     if(dashboard.innerHTML.includes("A aguardar")) dashboard.innerHTML = '';
@@ -406,6 +403,7 @@
             if (currentPlantId) {
                 db.ref('plants/' + currentPlantId + '/online').off('value', unsubscribeStatus);
                 db.ref('plants/' + currentPlantId + '/tags').off('value', unsubscribeTags);
+                db.ref('alarms/' + currentPlantId).off('value', unsubscribeAlarms);
             }
         }
     </script>

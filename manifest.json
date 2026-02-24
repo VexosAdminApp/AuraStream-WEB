@@ -1,6 +1,6 @@
 {
   "name": "AuraStream Industrial",
-  "short_name": "AuraStream",
+  "short_name": "AuraStream WEB",
   "description": "Monitoramento e Alarmes Industriais em Tempo Real",
   "start_url": "/?source=pwa",
   "scope": "/",

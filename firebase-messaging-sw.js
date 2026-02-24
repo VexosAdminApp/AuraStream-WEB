@@ -1,7 +1,7 @@
 importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
 importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js');
 
-// 1. FORÇA ATIVAÇÃO IMEDIATA DO MOTOR
+// 1. FORÇA ATIVAÇÃO IMEDIATA (Sem isso, o SW pode ficar em estado 'waiting' para sempre)
 self.addEventListener('install', function(event) {
     self.skipWaiting();
 });
@@ -10,7 +10,7 @@ self.addEventListener('activate', function(event) {
     event.waitUntil(clients.claim());
 });
 
-// 2. CONFIGURAÇÃO FIREBASE (Use EXATAMENTE as suas chaves aqui)
+// 2. CONFIGURAÇÃO FIREBASE
 firebase.initializeApp({
     apiKey: "AIzaSyAkoZykh9QaROTsCQC7_qs4NGNl4-cdMBM",
     authDomain: "aurastreamweb.firebaseapp.com",
@@ -23,11 +23,10 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// 3. RECEBIMENTO EM BACKGROUND (Aplicativo Fechado)
+// 3. EVENTO DE BACKGROUND: O navegador está fechado/oculto
 messaging.onBackgroundMessage(function(payload) {
-    console.log('[ServiceWorker] Alarme Crítico Recebido:', payload);
+    console.log('[ServiceWorker] Alarme Crítico Recebido em Background:', payload);
     
-    // ATENÇÃO: Lemos exclusivamente de payload.data
     const data = payload.data || {};
     
     const notificationTitle = data.title || "⚠️ ALARME INDUSTRIAL";
@@ -35,38 +34,37 @@ messaging.onBackgroundMessage(function(payload) {
         body: data.body || "Falha detectada no processo.",
         icon: '/icon.png',
         badge: '/icon.png',
-        // Padrão de vibração agressivo (vibra, pausa, vibra longo)
+        // Vibração agressiva estilo sirene (vibra-para-vibra-pausa...)
         vibrate: [500, 200, 500, 200, 800, 200, 800],
-        requireInteraction: true, // A notificação NÃO some até o operador interagir
+        requireInteraction: true, // Bloqueia sumiço da notificação; o operador PRECISA dispensar
         data: {
-            url: data.url || '/?tab=alarms' // Salva a URL para o evento de clique
+            url: data.url || '/?tab=alarms'
         },
-        tag: data.tag || 'scada-alarm-critical' // Agrupa notificações do mesmo equipamento
+        tag: data.tag || 'scada-alarm-critical'
     };
 
     return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// 4. EVENTO DE CLIQUE NA NOTIFICAÇÃO
+// 4. TRATAMENTO DO CLIQUE NA NOTIFICAÇÃO
 self.addEventListener('notificationclick', function(event) {
-    event.notification.close(); // Fecha o banner da notificação
+    event.notification.close(); 
     
-    const urlToOpen = event.notification.data.url || '/?tab=alarms';
+    const targetUrl = event.notification.data.url || '/?tab=alarms';
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(windowClients) {
-            // Procura se o app já está aberto em alguma aba
+            // Se o App já estiver aberto (mesmo em outra aba), foca nele e muda a aba internamente
             for (let i = 0; i < windowClients.length; i++) {
                 let client = windowClients[i];
-                if (client.url.includes(self.registration.scope) && 'focus' in client) {
-                    // Manda comando pro App mudar para a aba de alertas
+                if (client.url && 'focus' in client) {
                     client.postMessage({ type: 'SWITCH_TAB', tab: 'alarms' });
                     return client.focus();
                 }
             }
-            // Se o App estiver 100% fechado, abre uma nova janela
+            // Se o App estiver 100% morto na memória, abre do zero
             if (clients.openWindow) {
-                return clients.openWindow(urlToOpen);
+                return clients.openWindow(targetUrl);
             }
         })
     );
