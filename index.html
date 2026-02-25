@@ -87,6 +87,9 @@
             <input type="password" id="password" class="input-field" placeholder="Palavra-passe" required>
             <button class="btn-primary" onclick="login()">Login</button>
             <p id="login-error" style="color: var(--error-color); font-size: 13px; display: none; margin-top: 15px;"></p>
+            
+            <!-- Assinatura -->
+            <p style="font-size: 11px; color: #555; margin-top: 25px; margin-bottom: 0; font-style: italic;">by: Amarildo Jr Vieira</p>
         </div>
     </div>
 
@@ -97,12 +100,18 @@
             <input type="text" id="input-plant-id" class="input-field" placeholder="Ex: 8473f9fa" maxlength="8" style="text-align: center; font-size: 20px; font-weight: bold; letter-spacing: 2px;">
             <button class="btn-primary btn-secondary" onclick="linkPlant()">Sincronizar</button>
             <button class="btn-primary" style="background: #333; color: white; margin-top: 15px;" onclick="logout()">Sair</button>
+            
+            <!-- Assinatura -->
+            <p style="font-size: 11px; color: #555; margin-top: 25px; margin-bottom: 0; font-style: italic;">by: Amarildo Jr Vieira</p>
         </div>
     </div>
 
     <div id="main-app" class="screen-container">
         <header>
             <h1>AuraStream WEB</h1>
+            <!-- Assinatura -->
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: -3px; margin-bottom: 10px; font-style: italic;">by: Amarildo Jr Vieira</div>
+            
             <div id="plant-status" class="status-badge offline">A LIGAR...</div>
             <div id="notification-banner" onclick="pedirPermissaoEGerarToken(true)">
                 🔔 ATIVAR ALERTAS INDUSTRIAIS
