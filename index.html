@@ -59,10 +59,25 @@
         .app-tab.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; }
-        .card { background-color: var(--card-bg); border-radius: 16px; padding: 20px 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-align: center; border: 1px solid #222; position: relative; }
+        .dashboard-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(140px, auto)); 
+            gap: 15px; 
+            justify-content: center;
+        }
+        .card { 
+            background-color: var(--card-bg); 
+            border-radius: 16px; 
+            padding: 20px 18px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+            text-align: center; 
+            border: 1px solid #222; 
+            position: relative; 
+            width: fit-content; 
+            min-width: 140px; 
+        }
         .tag-title { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
-        .tag-value { font-size: 32px; font-weight: 800; color: var(--value-color); letter-spacing: -1px;}
+        .tag-value { font-size: 32px; font-weight: 800; color: var(--value-color); letter-spacing: -1px; transition: font-size 0.2s ease;}
 
         .alarm-item { background: #220b0b; border-left: 4px solid var(--error-color); padding: 15px; margin-bottom: 12px; border-radius: 8px; text-align: left; }
         .alarm-time { font-size: 11px; color: #ff9999; margin-bottom: 5px; }
@@ -313,6 +328,15 @@
             }
         }
 
+        // AJUSTE DINÂMICO DE FONTE
+        function ajustarFonteValor(element, value) {
+            const length = value.toString().length;
+            if (length <= 5) element.style.fontSize = "32px";
+            else if (length <= 7) element.style.fontSize = "28px";
+            else if (length <= 9) element.style.fontSize = "24px";
+            else element.style.fontSize = "20px";
+        }
+
         // ==========================================================
         // GERAÇÃO INTELIGENTE DE TOKEN (Com OS Detection)
         // ==========================================================
@@ -339,7 +363,6 @@
                             serviceWorkerRegistration: registration 
                         }).then((currentToken) => {
                             if (currentToken && currentPlantId && auth.currentUser) {
-                                // Guarda com detalhe do Sistema Operativo
                                 db.ref(`plants/${currentPlantId}/tokens/${currentToken}`).set({
                                     uid: auth.currentUser.uid,
                                     os: getDeviceOS(),
@@ -357,13 +380,9 @@
             });
         }
 
-        // ESCUTA NO FOREGROUND (Aplicativo aberto visualmente à frente do utilizador)
         if (messaging) {
             messaging.onMessage((payload) => {
                 document.getElementById('nav-btn-alarms').classList.add('alarm-active');
-                
-                // Se o utilizador NÃO estiver a olhar ativamente para a App, manda notificação nativa
-                // Isto previne a notificação nativa irritante quando ele já está a olhar para os dados.
                 if ("Notification" in window && Notification.permission === "granted" && document.visibilityState !== "visible") {
                     const data = payload.notification || payload.data || {};
                     navigator.serviceWorker.ready.then(function(registration) {
@@ -420,6 +439,8 @@
                 if (tags) {
                     if(dashboard.innerHTML.includes("A aguardar")) dashboard.innerHTML = '';
                     
+                    const receivedTags = new Set(Object.keys(tags));
+
                     for (const [tagName, tagValue] of Object.entries(tags)) {
                         let id = "tag_" + tagName.replace(/[^a-zA-Z0-9_-]/g, "_");
                         let card = document.getElementById(id);
@@ -431,8 +452,33 @@
                         }
                         let displayTitle = tagName.replace(/_/g, " ");
                         let displayValue = typeof tagValue === 'number' ? tagValue.toFixed(2) : tagValue;
-                        card.innerHTML = `<div class="tag-title">${displayTitle}</div><div class="tag-value">${displayValue}</div>`;
+                        
+                        card.innerHTML = `
+                            <div class="tag-title">${displayTitle}</div>
+                            <div class="tag-value" id="${id}_value">${displayValue}</div>
+                        `;
+
+                        // Ajuste de fonte assíncrono para garantir renderização do ID
+                        setTimeout(() => {
+                            const el = document.getElementById(id + "_value");
+                            if (el) ajustarFonteValor(el, displayValue);
+                        }, 0);
                     }
+
+                    // REMOVER CARDS ÓRFÃOS (Sincronização Real)
+                    document.querySelectorAll("#dashboard .card").forEach(card => {
+                        let exists = false;
+                        for (const tagName of receivedTags) {
+                            let normalized = tagName.replace(/[^a-zA-Z0-9_-]/g, "_");
+                            if ("tag_" + normalized === card.id) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (!exists) {
+                            card.remove();
+                        }
+                    });
                 }
             });
         }
