@@ -19,431 +19,174 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-
+        
         :root {
-            --bg-color: #0a0a0a; --card-bg: #141414; --primary: #00E676;
-            --text-main: #ffffff; --text-muted: #888888; --value-color: #00BCD4;
-            --error-color: #ff3333; --btn-color: #1565C0; --nav-bg: #111111;
+            --bg: #0a0a0a;
+            --card-bg: #141414;
+            --accent: #00E676;
+            --text-main: #ffffff;
+            --text-dim: #888888;
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         body {
-            background-color: var(--bg-color); color: var(--text-main);
-            font-family: 'Inter', sans-serif; margin: 0; padding: 0;
-            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        .screen-container { display: none; flex-direction: column; align-items: center; width: 100%; padding: 20px; padding-bottom: 90px; }
 
-        @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); background-color: rgba(255, 51, 51, 0.2); }
-            50% { box-shadow: 0 0 0 15px rgba(255, 51, 51, 0); background-color: rgba(255, 51, 51, 0.05); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); background-color: rgba(255, 51, 51, 0.2); }
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            max-width: 1200px;
+            width: 100%;
         }
-        .alarm-active { animation: pulse-red 1.5s infinite; border: 1px solid var(--error-color) !important; border-radius: 12px; color: #ffcccc; }
 
-        .auth-box { margin-top: 10vh; background: var(--card-bg); padding: 40px 30px; border-radius: 20px; border-top: 4px solid var(--primary); box-shadow: 0 20px 40px rgba(0,0,0,0.6); width: 100%; max-width: 400px; text-align: center; }
-        .auth-box h2 { color: var(--primary); margin: 0 0 10px 0; font-weight: 800; font-size: 26px;}
-        .auth-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 30px; }
-        .input-field { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #333; background: #1f1f1f; color: white; font-size: 16px; outline: none; transition: border 0.3s; }
-        .input-field:focus { border-color: var(--primary); }
-        .btn-primary { width: 100%; padding: 15px; background: var(--primary); color: #000; font-weight: 800; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; margin-top: 10px; }
-        .btn-secondary { background: var(--btn-color); color: white; }
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid var(--accent);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            flex-grow: 0; /* Desativado o grow para respeitar o tamanho dinâmico */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
 
-        #main-app { max-width: 1200px; padding: 15px; padding-bottom: 90px; width: 100%; }
-        header { text-align: center; margin-bottom: 25px; width: 100%; }
-        h1 { color: var(--primary); margin: 0; font-size: 22px; font-weight: 800;}
-        .status-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 800; margin-top: 8px; letter-spacing: 0.5px; }
-        .online { background-color: rgba(0, 230, 118, 0.2); color: var(--primary); border: 1px solid var(--primary);}
-        .offline { background-color: rgba(255, 68, 68, 0.2); color: var(--error-color); border: 1px solid var(--error-color);}
+        .tag-title {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-        .app-tab { display: none; width: 100%; animation: fadeIn 0.3s; }
-        .app-tab.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .tag-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--accent);
+            white-space: nowrap;
+        }
 
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; }
-        .card { background-color: var(--card-bg); border-radius: 16px; padding: 20px 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-align: center; border: 1px solid #222; position: relative; }
-        .tag-title { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
-        .tag-value { font-size: 32px; font-weight: 800; color: var(--value-color); letter-spacing: -1px;}
+        .tag-unit {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            margin-left: 5px;
+        }
 
-        .alarm-item { background: #220b0b; border-left: 4px solid var(--error-color); padding: 15px; margin-bottom: 12px; border-radius: 8px; text-align: left; }
-        .alarm-time { font-size: 11px; color: #ff9999; margin-bottom: 5px; }
-        .alarm-msg { font-size: 14px; font-weight: 600; color: white; }
-
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #222; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-item { color: #666; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 33%; height: 100%; cursor: pointer; transition: 0.2s; }
-        .nav-item.active { color: var(--primary); }
-        .nav-icon { font-size: 24px; margin-bottom: 4px; }
-        .nav-text { font-size: 10px; font-weight: 700; }
-
-        #notification-banner { background: linear-gradient(135deg, #ff9800, #ff5722); color: white; padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 13px; font-weight: 800; display: none; cursor: pointer; text-align: center; box-shadow: 0 4px 10px rgba(255, 152, 0, 0.4); }
+        @media (max-width: 600px) {
+            .card { 
+                width: 100% !important; 
+                min-width: 100% !important;
+                max-width: 100% !important;
+            }
+        }
     </style>
 </head>
 <body>
-
-    <div id="login-screen" class="screen-container">
-        <div class="auth-box">
-            <h2>AuraStream WEB</h2>
-            <p>Monitoramento 4.0 Seguro</p>
-            <input type="email" id="email" class="input-field" placeholder="E-mail" required>
-            <input type="password" id="password" class="input-field" placeholder="Palavra-passe" required>
-            <button class="btn-primary" onclick="login()">Login</button>
-            <p id="login-error" style="color: var(--error-color); font-size: 13px; display: none; margin-top: 15px;"></p>
-            
-            <!-- Assinatura -->
-            <p style="font-size: 11px; color: #555; margin-top: 25px; margin-bottom: 0; font-style: italic;">by: Amarildo Jr Vieira</p>
-        </div>
-    </div>
-
-    <div id="setup-screen" class="screen-container">
-        <div class="auth-box">
-            <h2 style="color: var(--value-color);">Vincular Fábrica</h2>
-            <p>Insira o <b>ID da Nuvem</b> gerado no computador do cliente.</p>
-            <input type="text" id="input-plant-id" class="input-field" placeholder="Ex: 8473f9fa" maxlength="8" style="text-align: center; font-size: 20px; font-weight: bold; letter-spacing: 2px;">
-            <button class="btn-primary btn-secondary" onclick="linkPlant()">Sincronizar</button>
-            <button class="btn-primary" style="background: #333; color: white; margin-top: 15px;" onclick="logout()">Sair</button>
-            
-            <!-- Assinatura -->
-            <p style="font-size: 11px; color: #555; margin-top: 25px; margin-bottom: 0; font-style: italic;">by: Amarildo Jr Vieira</p>
-        </div>
-    </div>
-
-    <div id="main-app" class="screen-container">
-        <header>
-            <h1>AuraStream WEB</h1>
-            <!-- Assinatura -->
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: -3px; margin-bottom: 10px; font-style: italic;">by: Amarildo Jr Vieira</div>
-            
-            <div id="plant-status" class="status-badge offline">A LIGAR...</div>
-            <div id="notification-banner" onclick="pedirPermissaoEGerarToken(true)">
-                🔔 ATIVAR ALERTAS INDUSTRIAIS
-            </div>
-        </header>
-
-        <div id="tab-dashboard" class="app-tab active">
-            <div class="dashboard-grid" id="dashboard">
-                <div style="text-align: center; color: var(--text-muted); grid-column: 1 / -1; padding: 40px;">
-                    A aguardar telemetria em tempo real...
-                </div>
-            </div>
-        </div>
-
-        <div id="tab-alarms" class="app-tab">
-            <div style="text-align: right; margin-bottom: 10px; padding: 0 10px;">
-                <button onclick="limparAlarmes()" style="background: #b71c1c; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                    🗑️ Limpar Histórico
-                </button>
-            </div>
-            <div id="alarms-list">
-                <div style="text-align: center; color: var(--text-muted); padding: 40px;" id="alarms-empty">
-                    Sem alarmes críticos ativos nesta sessão.
-                </div>
-            </div>
-        </div>
-
-        <div id="tab-settings" class="app-tab">
-            <div class="auth-box" style="margin-top: 0;">
-                <h3 style="margin-top: 0;">Configurações</h3>
-                <p>Conta: <span id="user-email-display"></span></p>
-                <button class="btn-primary" style="background: #8B0000; color: white;" onclick="desvincularPlanta()">Trocar de Fábrica</button>
-                <button class="btn-primary" style="background: #333; color: white; margin-top: 15px;" onclick="logout()">Sair (Logout)</button>
-            </div>
-        </div>
-
-        <div class="bottom-nav">
-            <div class="nav-item active" onclick="switchTab('dashboard', this)" id="nav-btn-dashboard">
-                <div class="nav-icon">📊</div><div class="nav-text">DADOS</div>
-            </div>
-            <div class="nav-item" id="nav-btn-alarms" onclick="switchTab('alarms', this)">
-                <div class="nav-icon">🚨</div><div class="nav-text">ALERTAS</div>
-            </div>
-            <div class="nav-item" onclick="switchTab('settings', this)" id="nav-btn-settings">
-                <div class="nav-icon">⚙️</div><div class="nav-text">AJUSTES</div>
-            </div>
-        </div>
+    <div id="dashboard" class="dashboard">
+        <div style="color: #555; padding: 50px;">A aguardar dados do SCADA...</div>
     </div>
 
     <script>
-        // CONFIGURAÇÕES FIREBASE
+        // Configuração Firebase (Preencher com os dados do seu projeto)
         const firebaseConfig = {
-            apiKey: "AIzaSyAkoZykh9QaROTsCQC7_qs4NGNl4-cdMBM",
-            authDomain: "aurastreamweb.firebaseapp.com",
-            databaseURL: "https://aurastreamweb-default-rtdb.firebaseio.com",
-            projectId: "aurastreamweb",
-            storageBucket: "aurastreamweb.firebasestorage.app",
-            messagingSenderId: "380237625698",
-            appId: "1:380237625698:web:db077e82d8ca77085cd43b"
+            apiKey: "",
+            authDomain: "",
+            databaseURL: "",
+            projectId: "",
+            storageBucket: "",
+            messagingSenderId: "",
+            appId: ""
         };
-        const VAPID_KEY = "BFfbj7DDkZcRr9mPu73VCl-sf-yMUNTqtmWk4THLQVhiCq0wNxJpCgbY_JlO1jvldzswLb55OOCpPtTTFLx761w";
 
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
         const db = firebase.database();
-        
-        let messaging = null;
-        try {
-            if (firebase.messaging.isSupported()) {
-                messaging = firebase.messaging();
-            } else {
-                console.warn("⚠️ FCM não suportado nativamente neste browser.");
-            }
-        } catch (err) {
-            console.error("⚠️ Bloqueio detetado no Firebase Messaging.", err);
+        const dashboard = document.getElementById("dashboard");
+        const currentPlantId = "SUA_PLANTA_ID"; // Ajustar para o ID real
+
+        /**
+         * Ajusta a largura do card dinamicamente.
+         * Baseado no número de casas decimais e no comprimento do valor exibido.
+         */
+        function ajustarTamanhoCard(card, decimals, valorStr) {
+            // Largura base inicial para nomes curtos e valores pequenos
+            let baseWidth = 180;
+            
+            // Adicional por cada casa decimal (15px por dígito extra)
+            let precisionExtra = (decimals || 0) * 15;
+            
+            // Adicional caso o número seja muito grande (ex: 1000000.00)
+            let contentExtra = Math.max(0, valorStr.length - 4) * 12;
+            
+            let finalWidth = baseWidth + precisionExtra + contentExtra;
+            
+            // Aplica os limites de largura ao elemento
+            card.style.minWidth = finalWidth + "px";
+            card.style.maxWidth = (finalWidth + 120) + "px";
         }
 
-        let currentPlantId = null;
-        let unsubscribeStatus = null;
-        let unsubscribeTags = null;
-        let unsubscribeAlarms = null;
-        
-        // REGISTRO ROBUSTO DO SERVICE WORKER
-        if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' })
-                .then((registration) => {
-                    registration.update(); 
-                });
-            });
-
-            // Comunicação de Abas PWA via Service Worker
-            navigator.serviceWorker.addEventListener('message', (event) => {
-                if (event.data && event.data.type === 'SWITCH_TAB') {
-                    const navBtn = document.getElementById('nav-btn-' + event.data.tab);
-                    if(navBtn) switchTab(event.data.tab, navBtn);
-                }
-            });
-        }
-
-        // ABERTURA DIRETA DE NOTIFICAÇÕES (Pelo link click_url)
-        window.onload = () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('tab') === 'alarms') {
-                setTimeout(() => {
-                    const navBtn = document.getElementById('nav-btn-alarms');
-                    if(navBtn) switchTab('alarms', navBtn);
-                }, 500); 
-            }
-        };
-
-        // ROTEAMENTO E AUTENTICAÇÃO
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                document.getElementById('user-email-display').innerText = user.email;
-                db.ref('users/' + user.uid + '/plant_id').once('value').then((snapshot) => {
-                    if (snapshot.exists()) {
-                        currentPlantId = snapshot.val();
-                        mostrarTela(document.getElementById('main-app'));
-                        iniciarMonitoramento(currentPlantId);
-                        
-                        if (Notification.permission === "granted") {
-                            pedirPermissaoEGerarToken(false);
-                        } else {
-                            document.getElementById('notification-banner').style.display = "block";
-                        }
-                    } else {
-                        mostrarTela(document.getElementById('setup-screen'));
-                    }
-                }).catch((err) => {
-                    alert("Acesso Negado: A sua conta não tem permissões válidas.\n" + err.message);
-                    logout();
-                });
-            } else {
-                pararMonitoramento();
-                mostrarTela(document.getElementById('login-screen'));
-            }
-        });
-
-        function mostrarTela(tela) {
-            document.querySelectorAll('.screen-container').forEach(e => e.style.display = 'none');
-            tela.style.display = 'flex';
-        }
-
-        function switchTab(tabName, element) {
-            document.querySelectorAll('.app-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-' + tabName).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-            element.classList.add('active');
-            if(tabName === 'alarms') {
-                document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
-            }
-        }
-
-        function login() {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
-            auth.signInWithEmailAndPassword(email, pass).catch(() => {
-                document.getElementById('login-error').innerText = "Credenciais inválidas.";
-                document.getElementById('login-error').style.display = 'block';
-            });
-        }
-
-        function logout() { auth.signOut(); }
-
-        function linkPlant() {
-            const pid = document.getElementById('input-plant-id').value.trim();
-            if(!pid) return;
-            db.ref('users/' + auth.currentUser.uid + '/plant_id').set(pid).then(() => {
-                currentPlantId = pid;
-                mostrarTela(document.getElementById('main-app'));
-                iniciarMonitoramento(currentPlantId);
-                
-                if (Notification.permission !== "granted") {
-                    document.getElementById('notification-banner').style.display = "block";
-                } else {
-                    pedirPermissaoEGerarToken(false);
-                }
-            });
-        }
-
-        function desvincularPlanta() {
-            if(confirm("Desvincular esta fábrica?")) {
-                pararMonitoramento();
-                db.ref('users/' + auth.currentUser.uid + '/plant_id').remove().then(() => {
-                    mostrarTela(document.getElementById('setup-screen'));
-                });
-            }
-        }
-
-        function limparAlarmes() {
+        function iniciarMonitoramento() {
             if (!currentPlantId) return;
-            if (confirm("Tem a certeza que deseja apagar todo o histórico de alarmes desta fábrica? Esta ação reflete-se em todos os dispositivos.")) {
-                db.ref('alarms/' + currentPlantId).remove().then(() => {
-                    document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
-                }).catch((err) => {
-                    alert("Acesso Negado: Apenas utilizadores vinculados à planta podem apagar o histórico.\n\nDetalhes: " + err.message);
-                });
-            }
-        }
 
-        // ==========================================================
-        // GERAÇÃO INTELIGENTE DE TOKEN (Com OS Detection)
-        // ==========================================================
-        function getDeviceOS() {
-            const ua = navigator.userAgent;
-            if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
-            if (/android/i.test(ua)) return 'android';
-            return 'web';
-        }
-
-        function pedirPermissaoEGerarToken(mostrarAlertas = false) {
-            if (!("Notification" in window) || !("serviceWorker" in navigator) || !messaging) {
-                if(mostrarAlertas) alert("Navegador não suporta Push Industrial.");
-                return;
-            }
-
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") {
-                    document.getElementById('notification-banner').style.display = "none";
-                    
-                    navigator.serviceWorker.ready.then((registration) => {
-                        messaging.getToken({ 
-                            vapidKey: VAPID_KEY,
-                            serviceWorkerRegistration: registration 
-                        }).then((currentToken) => {
-                            if (currentToken && currentPlantId && auth.currentUser) {
-                                // Guarda com detalhe do Sistema Operativo
-                                db.ref(`plants/${currentPlantId}/tokens/${currentToken}`).set({
-                                    uid: auth.currentUser.uid,
-                                    os: getDeviceOS(),
-                                    updatedAt: firebase.database.ServerValue.TIMESTAMP
-                                });
-                                if(mostrarAlertas) alert("Alertas ativados. O seu dispositivo está blindado na nuvem.");
-                            }
-                        }).catch((err) => {
-                            if(mostrarAlertas) alert("Erro ao contactar FCM: " + err);
-                        });
-                    });
-                } else {
-                    if(mostrarAlertas) alert("Permissão negada pelo operador.");
-                }
-            });
-        }
-
-        // ESCUTA NO FOREGROUND (Aplicativo aberto visualmente à frente do utilizador)
-        if (messaging) {
-            messaging.onMessage((payload) => {
-                document.getElementById('nav-btn-alarms').classList.add('alarm-active');
-                
-                // Se o utilizador NÃO estiver a olhar ativamente para a App, manda notificação nativa
-                // Isto previne a notificação nativa irritante quando ele já está a olhar para os dados.
-                if ("Notification" in window && Notification.permission === "granted" && document.visibilityState !== "visible") {
-                    const data = payload.notification || payload.data || {};
-                    navigator.serviceWorker.ready.then(function(registration) {
-                        registration.showNotification(data.title || "⚠️ ALARME INDUSTRIAL", {
-                            body: data.body || "Alarme disparado",
-                            icon: "/icon.png",
-                            vibrate: [500, 200, 500, 200, 800],
-                            data: { url: '/?tab=alarms' }
-                        });
-                    });
-                }
-            });
-        }
-
-        // MOTOR DE DADOS & PERSISTÊNCIA DE ALARMES
-        function iniciarMonitoramento(plantId) {
-            const dashboard = document.getElementById('dashboard');
-            const alarmsList = document.getElementById('alarms-list');
-
-            const alarmsRef = db.ref('alarms/' + plantId).orderByChild('timestamp').limitToLast(30);
-            unsubscribeAlarms = alarmsRef.on('value', (snapshot) => {
-                if (snapshot.exists()) {
-                    let htmlElements = '';
-                    snapshot.forEach((child) => {
-                        const alarm = child.val();
-                        const timeStr = new Date(alarm.timestamp).toLocaleString('pt-BR');
-                        htmlElements = `
-                            <div class="alarm-item">
-                                <div class="alarm-time">${timeStr}</div>
-                                <div class="alarm-msg">🛑 ${alarm.tag.replace(/_/g, ' ')}: ${alarm.value}</div>
-                                <div style="font-size: 12px; color: #ccc; margin-top:4px;">${alarm.message || ''}</div>
-                            </div>
-                        ` + htmlElements; 
-                    });
-                    alarmsList.innerHTML = htmlElements;
-                } else {
-                    alarmsList.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px;" id="alarms-empty">Nenhum alarme crítico registado.</div>';
-                    document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
-                }
-            });
-
-            unsubscribeStatus = db.ref('plants/' + plantId + '/online').on('value', (snapshot) => {
-                const isOnline = snapshot.val();
-                const ps = document.getElementById('plant-status');
-                if (isOnline) {
-                    ps.className = "status-badge online"; ps.innerText = "ONLINE - " + plantId;
-                } else {
-                    ps.className = "status-badge offline"; ps.innerText = "OFFLINE - " + plantId;
-                }
-            });
-
-            unsubscribeTags = db.ref('plants/' + plantId + '/tags').on('value', (snapshot) => {
+            db.ref('plants/' + currentPlantId + '/tags').on('value', (snapshot) => {
                 const tags = snapshot.val();
+                
+                // SOLUÇÃO PONTO 1: Limpa o dashboard completamente antes de reconstruir.
+                // Isso garante que variáveis removidas do Firebase desapareçam da tela na hora.
+                dashboard.innerHTML = '';
+                
                 if (tags) {
-                    if(dashboard.innerHTML.includes("A aguardar")) dashboard.innerHTML = '';
-                    
-                    for (const [tagName, tagValue] of Object.entries(tags)) {
-                        let id = "tag_" + tagName.replace(/[^a-zA-Z0-9_-]/g, "_");
-                        let card = document.getElementById(id);
-                        if (!card) {
-                            card = document.createElement("div");
-                            card.className = "card";
-                            card.id = id;
-                            dashboard.appendChild(card);
-                        }
+                    for (const [tagName, tagData] of Object.entries(tags)) {
+                        const card = document.createElement("div");
+                        card.className = "card";
+                        
                         let displayTitle = tagName.replace(/_/g, " ");
-                        let displayValue = typeof tagValue === 'number' ? tagValue.toFixed(2) : tagValue;
-                        card.innerHTML = `<div class="tag-title">${displayTitle}</div><div class="tag-value">${displayValue}</div>`;
+                        
+                        // Tratamento de dados (suporta objeto completo ou valor simples)
+                        let val = (typeof tagData === 'object' && tagData !== null) ? tagData.value : tagData;
+                        let dec = (typeof tagData === 'object' && tagData !== null) ? (tagData.decimals ?? 2) : 2;
+                        let unit = (typeof tagData === 'object' && tagData !== null) ? (tagData.unit || "") : "";
+                        let color = (typeof tagData === 'object' && tagData !== null) ? (tagData.color || "#00E676") : "#00E676";
+                        
+                        // Formatação do valor numérico
+                        let displayValue = (typeof val === 'number') ? val.toFixed(dec) : (val ?? "0");
+                        
+                        // Define a cor da borda baseada na tag
+                        card.style.borderLeftColor = color;
+                        
+                        card.innerHTML = `
+                            <div class="tag-title" title="${displayTitle}">${displayTitle}</div>
+                            <div class="tag-value" style="color: ${color}">
+                                ${displayValue}<span class="tag-unit">${unit}</span>
+                            </div>
+                        `;
+                        
+                        // SOLUÇÃO PONTO 2: Chama a função de ajuste dinâmico
+                        ajustarTamanhoCard(card, dec, displayValue.toString());
+                        
+                        dashboard.appendChild(card);
                     }
+                } else {
+                    dashboard.innerHTML = '<div style="color: #555; padding: 50px;">Nenhuma variável ativa.</div>';
                 }
+            }, (error) => {
+                console.error("Erro na leitura do Firebase:", error);
             });
         }
 
-        function pararMonitoramento() {
-            if (currentPlantId) {
-                db.ref('plants/' + currentPlantId + '/online').off('value', unsubscribeStatus);
-                db.ref('plants/' + currentPlantId + '/tags').off('value', unsubscribeTags);
-                db.ref('alarms/' + currentPlantId).off('value', unsubscribeAlarms);
-            }
-        }
+        // Inicializa o processo ao carregar a página
+        window.onload = iniciarMonitoramento;
     </script>
 </body>
 </html>
