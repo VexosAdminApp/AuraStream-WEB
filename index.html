@@ -453,33 +453,52 @@
                         
                         let displayTitle = tagName.replace(/_/g, " ");
                         
-                        // Variáveis de extração
+                        // Variáveis de extração seguras
                         let displayValue = "0.00";
                         let unitText = "";
                         let rangeText = "";
                         let isAlarming = false;
                         
-                        // Lógica para tratar o novo objeto e o número antigo
-                        if (typeof tagData === 'object' && tagData !== null) {
-                            displayValue = typeof tagData.value === 'number' ? tagData.value.toFixed(2) : tagData.value;
-                            unitText = tagData.unit ? `<span style="font-size: 16px; margin-left: 4px; color: var(--text-muted);">${tagData.unit}</span>` : "";
-                            isAlarming = tagData.is_alarming || false;
-                            
-                            if (tagData.min !== undefined && tagData.max !== undefined) {
-                                rangeText = `<div style="font-size: 10px; color: var(--text-muted); font-style: italic; margin-top: 8px;">Faixa: ${tagData.min} — ${tagData.max} ${tagData.unit || ''}</div>`;
+                        // Lógica ROBUSTA para desempacotar o JSON enviado pelo Python
+                        if (tagData !== null) {
+                            if (typeof tagData === 'object') {
+                                // Se for o novo pacote rico
+                                let rawVal = tagData.value !== undefined ? tagData.value : tagData;
+                                
+                                // Formata com segurança para nunca exibir [object Object]
+                                if (typeof rawVal === 'number') {
+                                    displayValue = rawVal.toFixed(2);
+                                } else if (typeof rawVal === 'object') {
+                                    // Caso os dados fiquem acidentalmente "encapsulados", extraímos ou transformamos em string legível
+                                    displayValue = JSON.stringify(rawVal);
+                                } else {
+                                    displayValue = String(rawVal);
+                                }
+                                
+                                // Deteta propriedades visuais do pacote
+                                unitText = tagData.unit ? `<span style="font-size: 16px; margin-left: 4px; color: var(--text-muted);">${tagData.unit}</span>` : "";
+                                isAlarming = tagData.is_alarming === true;
+                                
+                                if (tagData.min !== undefined && tagData.max !== undefined) {
+                                    rangeText = `<div style="font-size: 10px; color: var(--text-muted); font-style: italic; margin-top: 8px;">Faixa: ${tagData.min} — ${tagData.max} ${tagData.unit || ''}</div>`;
+                                }
+                            } else if (typeof tagData === 'number') {
+                                // Compatibilidade com a versão antiga (caso o Python ainda esteja a enviar apenas números)
+                                displayValue = tagData.toFixed(2);
+                            } else {
+                                // Se por acaso chegar uma string ou boleano
+                                displayValue = String(tagData);
                             }
-                        } else {
-                            displayValue = typeof tagData === 'number' ? tagData.toFixed(2) : tagData;
                         }
                         
-                        // Controla o piscar (animação vermelha)
+                        // Aplica a classe de piscar a vermelho se o estado de alarme for ativado
                         if (isAlarming) {
                             card.classList.add('alarm-active');
                         } else {
                             card.classList.remove('alarm-active');
                         }
                         
-                        // Constrói o interior do cartão isolando o ID para o redimensionamento da fonte não se confundir
+                        // Injeta o HTML com a faixa e a cor
                         card.innerHTML = `
                             <div class="tag-title">${displayTitle}</div>
                             <div class="tag-value">
@@ -488,14 +507,14 @@
                             ${rangeText}
                         `;
 
-                        // Ajuste de fonte assíncrono garantindo que foca apenas no número
+                        // Redimensiona o número sem afetar a unidade
                         setTimeout(() => {
                             const el = document.getElementById(id + "_value");
                             if (el) ajustarFonteValor(el, displayValue);
                         }, 0);
                     }
 
-                    // REMOVER CARDS ÓRFÃOS
+                    // REMOVER CARDS ÓRFÃOS (Sincronização Real)
                     document.querySelectorAll("#dashboard .card").forEach(card => {
                         let exists = false;
                         for (const tagName of receivedTags) {
