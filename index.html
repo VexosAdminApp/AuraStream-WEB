@@ -441,7 +441,7 @@
                     
                     const receivedTags = new Set(Object.keys(tags));
 
-                    for (const [tagName, tagValue] of Object.entries(tags)) {
+                    for (const [tagName, tagData] of Object.entries(tags)) {
                         let id = "tag_" + tagName.replace(/[^a-zA-Z0-9_-]/g, "_");
                         let card = document.getElementById(id);
                         if (!card) {
@@ -450,22 +450,52 @@
                             card.id = id;
                             dashboard.appendChild(card);
                         }
-                        let displayTitle = tagName.replace(/_/g, " ");
-                        let displayValue = typeof tagValue === 'number' ? tagValue.toFixed(2) : tagValue;
                         
+                        let displayTitle = tagName.replace(/_/g, " ");
+                        
+                        // Variáveis de extração
+                        let displayValue = "0.00";
+                        let unitText = "";
+                        let rangeText = "";
+                        let isAlarming = false;
+                        
+                        // Lógica para tratar o novo objeto e o número antigo
+                        if (typeof tagData === 'object' && tagData !== null) {
+                            displayValue = typeof tagData.value === 'number' ? tagData.value.toFixed(2) : tagData.value;
+                            unitText = tagData.unit ? `<span style="font-size: 16px; margin-left: 4px; color: var(--text-muted);">${tagData.unit}</span>` : "";
+                            isAlarming = tagData.is_alarming || false;
+                            
+                            if (tagData.min !== undefined && tagData.max !== undefined) {
+                                rangeText = `<div style="font-size: 10px; color: var(--text-muted); font-style: italic; margin-top: 8px;">Faixa: ${tagData.min} — ${tagData.max} ${tagData.unit || ''}</div>`;
+                            }
+                        } else {
+                            displayValue = typeof tagData === 'number' ? tagData.toFixed(2) : tagData;
+                        }
+                        
+                        // Controla o piscar (animação vermelha)
+                        if (isAlarming) {
+                            card.classList.add('alarm-active');
+                        } else {
+                            card.classList.remove('alarm-active');
+                        }
+                        
+                        // Constrói o interior do cartão isolando o ID para o redimensionamento da fonte não se confundir
                         card.innerHTML = `
                             <div class="tag-title">${displayTitle}</div>
-                            <div class="tag-value" id="${id}_value">${displayValue}</div>
+                            <div class="tag-value">
+                                <span id="${id}_value">${displayValue}</span>${unitText}
+                            </div>
+                            ${rangeText}
                         `;
 
-                        // Ajuste de fonte assíncrono para garantir renderização do ID
+                        // Ajuste de fonte assíncrono garantindo que foca apenas no número
                         setTimeout(() => {
                             const el = document.getElementById(id + "_value");
                             if (el) ajustarFonteValor(el, displayValue);
                         }, 0);
                     }
 
-                    // REMOVER CARDS ÓRFÃOS (Sincronização Real)
+                    // REMOVER CARDS ÓRFÃOS
                     document.querySelectorAll("#dashboard .card").forEach(card => {
                         let exists = false;
                         for (const tagName of receivedTags) {
