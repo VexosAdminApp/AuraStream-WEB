@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AuraStream WEB - Industrial</title>
+    <title>AuraStream WEB — Industrial</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0a0a0a">
+    <meta name="theme-color" content="#0a0f1a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="/icon.png">
@@ -18,166 +18,594 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
 
         :root {
-            --bg-color: #0a0a0a; --card-bg: #141414; --primary: #00E676;
-            --text-main: #ffffff; --text-muted: #888888; --value-color: #00BCD4;
-            --error-color: #ff3333; --btn-color: #1565C0; --nav-bg: #111111;
+            --bg-primary: #0a0f1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a2332;
+            --bg-card-hover: #1f2b3d;
+            --bg-input: #0f1724;
+            --primary: #00E676;
+            --primary-dim: rgba(0, 230, 118, 0.15);
+            --primary-glow: rgba(0, 230, 118, 0.3);
+            --accent: #00BCD4;
+            --accent-dim: rgba(0, 188, 212, 0.15);
+            --text-primary: #f0f4f8;
+            --text-secondary: #8899aa;
+            --text-muted: #5a6a7a;
+            --error: #ff4757;
+            --error-dim: rgba(255, 71, 87, 0.15);
+            --warning: #ffa726;
+            --warning-dim: rgba(255, 167, 38, 0.15);
+            --success: #00E676;
+            --border: #1e2d3d;
+            --border-focus: #00E676;
+            --nav-bg: rgba(17, 24, 39, 0.95);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
+            --shadow-lg: 0 16px 48px rgba(0,0,0,0.5);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        
         body {
-            background-color: var(--bg-color); color: var(--text-main);
-            font-family: 'Inter', sans-serif; margin: 0; padding: 0;
-            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            -webkit-font-smoothing: antialiased;
         }
-        .screen-container { display: none; flex-direction: column; align-items: center; width: 100%; padding: 20px; padding-bottom: 90px; }
 
-        @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); background-color: rgba(255, 51, 51, 0.2); }
-            50% { box-shadow: 0 0 0 15px rgba(255, 51, 51, 0); background-color: rgba(255, 51, 51, 0.05); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); background-color: rgba(255, 51, 51, 0.2); }
+        .screen-container { display: none; flex-direction: column; align-items: center; width: 100%; padding: 20px; padding-bottom: 100px; }
+
+        /* ── Animações ── */
+        @keyframes pulse-alarm {
+            0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.6); }
+            50% { box-shadow: 0 0 0 12px rgba(255, 71, 87, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
         }
-        .alarm-active { animation: pulse-red 1.5s infinite; border: 1px solid var(--error-color) !important; border-radius: 12px; color: #ffcccc; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        @keyframes breathe {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .alarm-active {
+            animation: pulse-alarm 1.5s infinite;
+            border-color: var(--error) !important;
+            background: linear-gradient(135deg, rgba(255,71,87,0.12), rgba(255,71,87,0.05)) !important;
+        }
 
-        .auth-box { margin-top: 10vh; background: var(--card-bg); padding: 40px 30px; border-radius: 20px; border-top: 4px solid var(--primary); box-shadow: 0 20px 40px rgba(0,0,0,0.6); width: 100%; max-width: 400px; text-align: center; }
-        .auth-box h2 { color: var(--primary); margin: 0 0 10px 0; font-weight: 800; font-size: 26px;}
-        .auth-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 30px; }
-        .input-field { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #333; background: #1f1f1f; color: white; font-size: 16px; outline: none; transition: border 0.3s; }
-        .input-field:focus { border-color: var(--primary); }
-        .btn-primary { width: 100%; padding: 15px; background: var(--primary); color: #000; font-weight: 800; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; margin-top: 10px; }
-        .btn-secondary { background: var(--btn-color); color: white; }
+        /* ── Login / Setup ── */
+        .auth-box {
+            margin-top: 8vh;
+            background: var(--bg-card);
+            padding: 48px 32px;
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .auth-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent), var(--primary));
+            background-size: 200% 100%;
+            animation: shimmer 3s linear infinite;
+        }
+        .auth-logo {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+            margin: 0 auto 16px;
+            display: block;
+            filter: drop-shadow(0 4px 12px rgba(0,230,118,0.3));
+        }
+        .auth-box h2 {
+            color: var(--text-primary);
+            margin: 0 0 4px 0;
+            font-weight: 800;
+            font-size: 24px;
+            letter-spacing: -0.5px;
+        }
+        .auth-box .subtitle {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 32px;
+            font-weight: 400;
+        }
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .input-field:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--primary-dim);
+        }
+        .input-field::placeholder { color: var(--text-muted); }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: #0a0f1a;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            margin-top: 8px;
+            transition: transform 0.15s, box-shadow 0.3s;
+            letter-spacing: 0.3px;
+        }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-primary:hover { box-shadow: 0 4px 16px var(--primary-glow); }
+        .btn-secondary { background: var(--accent); }
+        .btn-danger { background: var(--error); color: white; }
+        .btn-ghost { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-ghost:hover { background: var(--bg-card); color: var(--text-primary); }
 
-        #main-app { max-width: 1200px; padding: 15px; padding-bottom: 90px; width: 100%; }
-        header { text-align: center; margin-bottom: 25px; width: 100%; }
-        h1 { color: var(--primary); margin: 0; font-size: 22px; font-weight: 800;}
-        .status-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 800; margin-top: 8px; letter-spacing: 0.5px; }
-        .online { background-color: rgba(0, 230, 118, 0.2); color: var(--primary); border: 1px solid var(--primary);}
-        .offline { background-color: rgba(255, 68, 68, 0.2); color: var(--error-color); border: 1px solid var(--error-color);}
+        .auth-footer {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 28px;
+            font-style: italic;
+        }
 
-        .app-tab { display: none; width: 100%; animation: fadeIn 0.3s; }
-        .app-tab.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* ── App Principal ── */
+        #main-app { max-width: 1200px; padding: 16px; padding-bottom: 100px; width: 100%; }
 
-        .dashboard-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(140px, auto)); 
-            gap: 15px; 
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+            width: 100%;
+        }
+        .header-brand {
+            display: flex;
+            align-items: center;
             justify-content: center;
+            gap: 10px;
+            margin-bottom: 8px;
         }
-        .card { 
-            background-color: var(--card-bg); 
-            border-radius: 16px; 
-            padding: 20px 18px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
-            text-align: center; 
-            border: 1px solid #222; 
-            position: relative; 
-            width: fit-content; 
-            min-width: 140px; 
+        .header-brand img {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
         }
-        .tag-title { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
-        .tag-value { font-size: 32px; font-weight: 800; color: var(--value-color); letter-spacing: -1px; transition: font-size 0.2s ease;}
+        .header-brand h1 {
+            color: var(--text-primary);
+            margin: 0;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .header-brand h1 span { color: var(--primary); }
 
-        .alarm-item { background: #220b0b; border-left: 4px solid var(--error-color); padding: 15px; margin-bottom: 12px; border-radius: 8px; text-align: left; }
-        .alarm-time { font-size: 11px; color: #ff9999; margin-bottom: 5px; }
-        .alarm-msg { font-size: 14px; font-weight: 600; color: white; }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .online {
+            background: var(--primary-dim);
+            color: var(--primary);
+            border: 1px solid rgba(0,230,118,0.3);
+        }
+        .online .status-dot { background: var(--primary); animation: breathe 2s infinite; }
+        .offline {
+            background: var(--error-dim);
+            color: var(--error);
+            border: 1px solid rgba(255,71,87,0.3);
+        }
+        .offline .status-dot { background: var(--error); }
 
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #222; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-item { color: #666; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 33%; height: 100%; cursor: pointer; transition: 0.2s; }
+        /* ── Tabs ── */
+        .app-tab { display: none; width: 100%; animation: fadeInUp 0.3s ease; }
+        .app-tab.active { display: block; }
+
+        /* ── Dashboard Grid ── */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+            gap: 12px;
+        }
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 20px 16px;
+            border: 1px solid var(--border);
+            text-align: center;
+            position: relative;
+            transition: border-color 0.3s, transform 0.15s, box-shadow 0.3s;
+            overflow: hidden;
+        }
+        .card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .card:hover::after { opacity: 1; }
+
+        .tag-title {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        .tag-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 30px;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: -1px;
+            transition: font-size 0.2s ease;
+        }
+        .tag-unit {
+            font-size: 14px;
+            margin-left: 3px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        .tag-range {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+            font-style: italic;
+        }
+
+        /* ── Alarmes ── */
+        .alarms-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 0 4px;
+        }
+        .alarms-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .btn-clear-alarms {
+            background: var(--error-dim);
+            color: var(--error);
+            border: 1px solid rgba(255,71,87,0.3);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+        .btn-clear-alarms:hover { background: rgba(255,71,87,0.25); }
+
+        .alarm-item {
+            background: var(--bg-card);
+            border-left: 3px solid var(--error);
+            padding: 16px;
+            margin-bottom: 10px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--error);
+            transition: transform 0.15s;
+        }
+        .alarm-item:hover { transform: translateX(4px); }
+        .alarm-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .alarm-msg {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+        .alarm-detail {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .alarms-empty {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 60px 20px;
+            font-size: 14px;
+        }
+        .alarms-empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.4;
+        }
+
+        /* ── Configurações ── */
+        .settings-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 32px 24px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+        .settings-box h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .settings-info {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .settings-row:last-child { border-bottom: none; }
+        .settings-label { font-size: 13px; color: var(--text-secondary); }
+        .settings-value { font-size: 13px; color: var(--text-primary); font-weight: 600; }
+
+        /* ── Bottom Nav ── */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 68px;
+            background: var(--nav-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid var(--border);
+            z-index: 1000;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .nav-item {
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 33%;
+            height: 100%;
+            cursor: pointer;
+            transition: color 0.2s;
+            position: relative;
+        }
         .nav-item.active { color: var(--primary); }
-        .nav-icon { font-size: 24px; margin-bottom: 4px; }
-        .nav-text { font-size: 10px; font-weight: 700; }
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 32px;
+            height: 2px;
+            background: var(--primary);
+            border-radius: 0 0 2px 2px;
+        }
+        .nav-icon { font-size: 22px; margin-bottom: 3px; }
+        .nav-text { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
+        .nav-badge {
+            position: absolute;
+            top: 8px;
+            right: calc(50% - 20px);
+            width: 8px;
+            height: 8px;
+            background: var(--error);
+            border-radius: 50%;
+            display: none;
+        }
 
-        #notification-banner { background: linear-gradient(135deg, #ff9800, #ff5722); color: white; padding: 12px; border-radius: 8px; margin-top: 15px; font-size: 13px; font-weight: 800; display: none; cursor: pointer; text-align: center; box-shadow: 0 4px 10px rgba(255, 152, 0, 0.4); }
+        /* ── Notification Banner ── */
+        #notification-banner {
+            background: linear-gradient(135deg, var(--warning), #ff7043);
+            color: #0a0f1a;
+            padding: 14px 20px;
+            border-radius: var(--radius-md);
+            margin-top: 16px;
+            font-size: 13px;
+            font-weight: 700;
+            display: none;
+            cursor: pointer;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(255, 167, 38, 0.3);
+            transition: transform 0.15s;
+            letter-spacing: 0.3px;
+        }
+        #notification-banner:active { transform: scale(0.98); }
+
+        /* ── Responsivo ── */
+        @media (max-width: 380px) {
+            .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+            .tag-value { font-size: 26px; }
+        }
+        @media (min-width: 768px) {
+            .dashboard-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        }
     </style>
 </head>
 <body>
 
+    <!-- ═══════════════════ TELA DE LOGIN ═══════════════════ -->
     <div id="login-screen" class="screen-container">
         <div class="auth-box">
-            <h2>AuraStream WEB</h2>
-            <p>Monitoramento 4.0 Seguro</p>
-            <input type="email" id="email" class="input-field" placeholder="E-mail" required>
+            <img src="/icon.png" alt="AuraStream" class="auth-logo">
+            <h2>AuraStream <span style="color: var(--accent);">WEB</span></h2>
+            <p class="subtitle">Monitoramento Industrial 4.0</p>
+            <input type="email" id="email" class="input-field" placeholder="E-mail corporativo" required>
             <input type="password" id="password" class="input-field" placeholder="Palavra-passe" required>
-            <button class="btn-primary" onclick="login()">Login</button>
-            <p id="login-error" style="color: var(--error-color); font-size: 13px; display: none; margin-top: 15px;"></p>
-            
-            <!-- Assinatura -->
-            <p style="font-size: 11px; color: #555; margin-top: 25px; margin-bottom: 0; font-style: italic;">by: Amarildo Jr Vieira</p>
+            <button class="btn-primary" onclick="login()">Entrar</button>
+            <p id="login-error" style="color: var(--error); font-size: 13px; display: none; margin-top: 16px; font-weight: 500;"></p>
+            <p class="auth-footer">by Amarildo Jr Vieira</p>
         </div>
     </div>
 
+    <!-- ═══════════════════ TELA DE SETUP ═══════════════════ -->
     <div id="setup-screen" class="screen-container">
         <div class="auth-box">
-            <h2 style="color: var(--value-color);">Vincular Fábrica</h2>
-            <p>Insira o <b>ID da Nuvem</b> gerado no computador do cliente.</p>
-            <input type="text" id="input-plant-id" class="input-field" placeholder="Ex: 8473f9fa" maxlength="8" style="text-align: center; font-size: 20px; font-weight: bold; letter-spacing: 2px;">
+            <div style="font-size: 48px; margin-bottom: 16px;">🏭</div>
+            <h2>Vincular Fábrica</h2>
+            <p class="subtitle">Insira o <strong>ID da Nuvem</strong> gerado no computador do cliente.</p>
+            <input type="text" id="input-plant-id" class="input-field" placeholder="Ex: 8473f9fa" maxlength="8" style="text-align: center; font-size: 22px; font-weight: bold; letter-spacing: 4px; font-family: 'JetBrains Mono', monospace;">
             <button class="btn-primary btn-secondary" onclick="linkPlant()">Sincronizar</button>
-            <button class="btn-primary" style="background: #333; color: white; margin-top: 15px;" onclick="logout()">Sair</button>
-            
-            <!-- Assinatura -->
-            <p style="font-size: 11px; color: #555; margin-top: 25px; margin-bottom: 0; font-style: italic;">by: Amarildo Jr Vieira</p>
+            <button class="btn-primary btn-ghost" style="margin-top: 12px;" onclick="logout()">Sair</button>
+            <p class="auth-footer">by Amarildo Jr Vieira</p>
         </div>
     </div>
 
+    <!-- ═══════════════════ APP PRINCIPAL ═══════════════════ -->
     <div id="main-app" class="screen-container">
         <header>
-            <h1>AuraStream WEB</h1>
-            <!-- Assinatura -->
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: -3px; margin-bottom: 10px; font-style: italic;">by: Amarildo Jr Vieira</div>
-            
-            <div id="plant-status" class="status-badge offline">A LIGAR...</div>
+            <div class="header-brand">
+                <img src="/icon.png" alt="AuraStream">
+                <h1>Aura<span>Stream</span></h1>
+            </div>
+            <div id="plant-status" class="status-badge offline">
+                <span class="status-dot"></span> A LIGAR...
+            </div>
             <div id="notification-banner" onclick="pedirPermissaoEGerarToken(true)">
-                🔔 ATIVAR ALERTAS INDUSTRIAIS
+                🔔 ATIVAR ALERTAS INDUSTRIAIS NO SEU DISPOSITIVO
             </div>
         </header>
 
+        <!-- Tab: Dashboard -->
         <div id="tab-dashboard" class="app-tab active">
             <div class="dashboard-grid" id="dashboard">
-                <div style="text-align: center; color: var(--text-muted); grid-column: 1 / -1; padding: 40px;">
-                    A aguardar telemetria em tempo real...
+                <div style="text-align: center; color: var(--text-muted); grid-column: 1 / -1; padding: 60px 20px;">
+                    <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.3;">📡</div>
+                    <div style="font-size: 14px;">A aguardar telemetria em tempo real...</div>
                 </div>
             </div>
         </div>
 
+        <!-- Tab: Alarmes -->
         <div id="tab-alarms" class="app-tab">
-            <div style="text-align: right; margin-bottom: 10px; padding: 0 10px;">
-                <button onclick="limparAlarmes()" style="background: #b71c1c; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                    🗑️ Limpar Histórico
+            <div class="alarms-header">
+                <h3>Alarmes Recentes</h3>
+                <button class="btn-clear-alarms" onclick="limparAlarmes()">
+                    <span>🗑</span> Limpar
                 </button>
             </div>
             <div id="alarms-list">
-                <div style="text-align: center; color: var(--text-muted); padding: 40px;" id="alarms-empty">
-                    Sem alarmes críticos ativos nesta sessão.
+                <div class="alarms-empty" id="alarms-empty">
+                    <div class="alarms-empty-icon">✅</div>
+                    <div>Nenhum alarme crítico registado.</div>
                 </div>
             </div>
         </div>
 
+        <!-- Tab: Configurações -->
         <div id="tab-settings" class="app-tab">
-            <div class="auth-box" style="margin-top: 0;">
-                <h3 style="margin-top: 0;">Configurações</h3>
-                <p>Conta: <span id="user-email-display"></span></p>
-                <button class="btn-primary" style="background: #8B0000; color: white;" onclick="desvincularPlanta()">Trocar de Fábrica</button>
-                <button class="btn-primary" style="background: #333; color: white; margin-top: 15px;" onclick="logout()">Sair (Logout)</button>
+            <div class="settings-box">
+                <h3>Configurações</h3>
+                <p class="settings-info">Gerencie sua conta e vinculação de fábrica.</p>
+                <div class="settings-row">
+                    <span class="settings-label">Conta</span>
+                    <span class="settings-value" id="user-email-display"></span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Planta</span>
+                    <span class="settings-value" id="plant-id-display">—</span>
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Versão</span>
+                    <span class="settings-value">v5.0.0</span>
+                </div>
+                <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 10px;">
+                    <button class="btn-primary btn-danger" onclick="desvincularPlanta()">Trocar de Fábrica</button>
+                    <button class="btn-primary btn-ghost" onclick="logout()">Sair (Logout)</button>
+                </div>
             </div>
         </div>
 
+        <!-- Bottom Navigation -->
         <div class="bottom-nav">
             <div class="nav-item active" onclick="switchTab('dashboard', this)" id="nav-btn-dashboard">
-                <div class="nav-icon">📊</div><div class="nav-text">DADOS</div>
+                <div class="nav-icon">📊</div>
+                <div class="nav-text">DADOS</div>
             </div>
             <div class="nav-item" id="nav-btn-alarms" onclick="switchTab('alarms', this)">
-                <div class="nav-icon">🚨</div><div class="nav-text">ALERTAS</div>
+                <div class="nav-icon">🚨</div>
+                <div class="nav-text">ALERTAS</div>
+                <div class="nav-badge" id="alarm-badge"></div>
             </div>
             <div class="nav-item" onclick="switchTab('settings', this)" id="nav-btn-settings">
-                <div class="nav-icon">⚙️</div><div class="nav-text">AJUSTES</div>
+                <div class="nav-icon">⚙️</div>
+                <div class="nav-text">AJUSTES</div>
             </div>
         </div>
     </div>
 
     <script>
-        // CONFIGURAÇÕES FIREBASE
+        // ═══════════════════ FIREBASE CONFIG ═══════════════════
         const firebaseConfig = {
             apiKey: "AIzaSyAkoZykh9QaROTsCQC7_qs4NGNl4-cdMBM",
             authDomain: "aurastreamweb.firebaseapp.com",
@@ -191,17 +619,17 @@
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
-        const db = firebase.database();
+        const dbRef = firebase.database();
         
         let messaging = null;
         try {
             if (firebase.messaging.isSupported()) {
                 messaging = firebase.messaging();
             } else {
-                console.warn("⚠️ FCM não suportado nativamente neste browser.");
+                console.warn("FCM não suportado neste browser.");
             }
         } catch (err) {
-            console.error("⚠️ Bloqueio detetado no Firebase Messaging.", err);
+            console.error("Bloqueio detetado no Firebase Messaging.", err);
         }
 
         let currentPlantId = null;
@@ -209,16 +637,13 @@
         let unsubscribeTags = null;
         let unsubscribeAlarms = null;
         
-        // REGISTRO ROBUSTO DO SERVICE WORKER
+        // ═══════════════════ SERVICE WORKER ═══════════════════
         if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' })
-                .then((registration) => {
-                    registration.update(); 
-                });
+                .then((registration) => { registration.update(); });
             });
 
-            // Comunicação de Abas PWA via Service Worker
             navigator.serviceWorker.addEventListener('message', (event) => {
                 if (event.data && event.data.type === 'SWITCH_TAB') {
                     const navBtn = document.getElementById('nav-btn-' + event.data.tab);
@@ -227,24 +652,25 @@
             });
         }
 
-        // ABERTURA DIRETA DE NOTIFICAÇÕES (Pelo link click_url)
+        // Abertura direta via notificação
         window.onload = () => {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('tab') === 'alarms') {
                 setTimeout(() => {
                     const navBtn = document.getElementById('nav-btn-alarms');
                     if(navBtn) switchTab('alarms', navBtn);
-                }, 500); 
+                }, 500);
             }
         };
 
-        // ROTEAMENTO E AUTENTICAÇÃO
+        // ═══════════════════ AUTENTICAÇÃO ═══════════════════
         auth.onAuthStateChanged((user) => {
             if (user) {
                 document.getElementById('user-email-display').innerText = user.email;
-                db.ref('users/' + user.uid + '/plant_id').once('value').then((snapshot) => {
+                dbRef.ref('users/' + user.uid + '/plant_id').once('value').then((snapshot) => {
                     if (snapshot.exists()) {
                         currentPlantId = snapshot.val();
+                        document.getElementById('plant-id-display').innerText = currentPlantId;
                         mostrarTela(document.getElementById('main-app'));
                         iniciarMonitoramento(currentPlantId);
                         
@@ -278,25 +704,29 @@
             element.classList.add('active');
             if(tabName === 'alarms') {
                 document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
+                document.getElementById('alarm-badge').style.display = 'none';
             }
         }
 
         function login() {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
-            auth.signInWithEmailAndPassword(email, pass).catch(() => {
-                document.getElementById('login-error').innerText = "Credenciais inválidas.";
-                document.getElementById('login-error').style.display = 'block';
+            const errEl = document.getElementById('login-error');
+            errEl.style.display = 'none';
+            auth.signInWithEmailAndPassword(email, pass).catch((err) => {
+                errEl.innerText = "Credenciais inválidas. Verifique e tente novamente.";
+                errEl.style.display = 'block';
             });
         }
 
         function logout() { auth.signOut(); }
 
         function linkPlant() {
-            const pid = document.getElementById('input-plant-id').value.trim();
-            if(!pid) return;
-            db.ref('users/' + auth.currentUser.uid + '/plant_id').set(pid).then(() => {
+            const pid = document.getElementById('input-plant-id').value.trim().toLowerCase();
+            if(!pid || pid.length < 4) return;
+            dbRef.ref('users/' + auth.currentUser.uid + '/plant_id').set(pid).then(() => {
                 currentPlantId = pid;
+                document.getElementById('plant-id-display').innerText = pid;
                 mostrarTela(document.getElementById('main-app'));
                 iniciarMonitoramento(currentPlantId);
                 
@@ -309,9 +739,9 @@
         }
 
         function desvincularPlanta() {
-            if(confirm("Desvincular esta fábrica?")) {
+            if(confirm("Desvincular esta fábrica? Poderá vincular outra a seguir.")) {
                 pararMonitoramento();
-                db.ref('users/' + auth.currentUser.uid + '/plant_id').remove().then(() => {
+                dbRef.ref('users/' + auth.currentUser.uid + '/plant_id').remove().then(() => {
                     mostrarTela(document.getElementById('setup-screen'));
                 });
             }
@@ -319,27 +749,26 @@
 
         function limparAlarmes() {
             if (!currentPlantId) return;
-            if (confirm("Tem a certeza que deseja apagar todo o histórico de alarmes desta fábrica? Esta ação reflete-se em todos os dispositivos.")) {
-                db.ref('alarms/' + currentPlantId).remove().then(() => {
+            if (confirm("Apagar todo o histórico de alarmes desta fábrica?")) {
+                dbRef.ref('alarms/' + currentPlantId).remove().then(() => {
                     document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
+                    document.getElementById('alarm-badge').style.display = 'none';
                 }).catch((err) => {
-                    alert("Acesso Negado: Apenas utilizadores vinculados à planta podem apagar o histórico.\n\nDetalhes: " + err.message);
+                    alert("Acesso Negado.\n\nDetalhes: " + err.message);
                 });
             }
         }
 
-        // AJUSTE DINÂMICO DE FONTE
+        // ═══════════════════ AJUSTE DINÂMICO DE FONTE ═══════════════════
         function ajustarFonteValor(element, value) {
             const length = value.toString().length;
-            if (length <= 5) element.style.fontSize = "32px";
-            else if (length <= 7) element.style.fontSize = "28px";
-            else if (length <= 9) element.style.fontSize = "24px";
-            else element.style.fontSize = "20px";
+            if (length <= 5) element.style.fontSize = "30px";
+            else if (length <= 7) element.style.fontSize = "26px";
+            else if (length <= 9) element.style.fontSize = "22px";
+            else element.style.fontSize = "18px";
         }
 
-        // ==========================================================
-        // GERAÇÃO INTELIGENTE DE TOKEN (Com OS Detection)
-        // ==========================================================
+        // ═══════════════════ PUSH NOTIFICATIONS ═══════════════════
         function getDeviceOS() {
             const ua = navigator.userAgent;
             if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
@@ -363,12 +792,12 @@
                             serviceWorkerRegistration: registration 
                         }).then((currentToken) => {
                             if (currentToken && currentPlantId && auth.currentUser) {
-                                db.ref(`plants/${currentPlantId}/tokens/${currentToken}`).set({
+                                dbRef.ref(`plants/${currentPlantId}/tokens/${currentToken}`).set({
                                     uid: auth.currentUser.uid,
                                     os: getDeviceOS(),
                                     updatedAt: firebase.database.ServerValue.TIMESTAMP
                                 });
-                                if(mostrarAlertas) alert("Alertas ativados. O seu dispositivo está blindado na nuvem.");
+                                if(mostrarAlertas) alert("Alertas industriais ativados com sucesso.");
                             }
                         }).catch((err) => {
                             if(mostrarAlertas) alert("Erro ao contactar FCM: " + err);
@@ -383,10 +812,11 @@
         if (messaging) {
             messaging.onMessage((payload) => {
                 document.getElementById('nav-btn-alarms').classList.add('alarm-active');
+                document.getElementById('alarm-badge').style.display = 'block';
                 if ("Notification" in window && Notification.permission === "granted" && document.visibilityState !== "visible") {
                     const data = payload.notification || payload.data || {};
                     navigator.serviceWorker.ready.then(function(registration) {
-                        registration.showNotification(data.title || "⚠️ ALARME INDUSTRIAL", {
+                        registration.showNotification(data.title || "ALARME INDUSTRIAL", {
                             body: data.body || "Alarme disparado",
                             icon: "/icon.png",
                             vibrate: [500, 200, 500, 200, 800],
@@ -397,12 +827,13 @@
             });
         }
 
-        // MOTOR DE DADOS & PERSISTÊNCIA DE ALARMES
+        // ═══════════════════ MOTOR DE DADOS ═══════════════════
         function iniciarMonitoramento(plantId) {
             const dashboard = document.getElementById('dashboard');
             const alarmsList = document.getElementById('alarms-list');
 
-            const alarmsRef = db.ref('alarms/' + plantId).orderByChild('timestamp').limitToLast(30);
+            // Alarmes em tempo real
+            const alarmsRef = dbRef.ref('alarms/' + plantId).orderByChild('timestamp').limitToLast(30);
             unsubscribeAlarms = alarmsRef.on('value', (snapshot) => {
                 if (snapshot.exists()) {
                     let htmlElements = '';
@@ -412,32 +843,37 @@
                         htmlElements = `
                             <div class="alarm-item">
                                 <div class="alarm-time">${timeStr}</div>
-                                <div class="alarm-msg">🛑 ${alarm.tag.replace(/_/g, ' ')}: ${alarm.value}</div>
-                                <div style="font-size: 12px; color: #ccc; margin-top:4px;">${alarm.message || ''}</div>
+                                <div class="alarm-msg">${alarm.tag.replace(/_/g, ' ')}: ${typeof alarm.value === 'number' ? alarm.value.toFixed(2) : alarm.value}</div>
+                                <div class="alarm-detail">${alarm.message || ''}</div>
                             </div>
-                        ` + htmlElements; 
+                        ` + htmlElements;
                     });
                     alarmsList.innerHTML = htmlElements;
                 } else {
-                    alarmsList.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px;" id="alarms-empty">Nenhum alarme crítico registado.</div>';
+                    alarmsList.innerHTML = '<div class="alarms-empty"><div class="alarms-empty-icon">✅</div><div>Nenhum alarme crítico registado.</div></div>';
                     document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
+                    document.getElementById('alarm-badge').style.display = 'none';
                 }
             });
 
-            unsubscribeStatus = db.ref('plants/' + plantId + '/online').on('value', (snapshot) => {
+            // Status online/offline
+            unsubscribeStatus = dbRef.ref('plants/' + plantId + '/online').on('value', (snapshot) => {
                 const isOnline = snapshot.val();
                 const ps = document.getElementById('plant-status');
                 if (isOnline) {
-                    ps.className = "status-badge online"; ps.innerText = "ONLINE - " + plantId;
+                    ps.className = "status-badge online";
+                    ps.innerHTML = '<span class="status-dot"></span> ONLINE — ' + plantId;
                 } else {
-                    ps.className = "status-badge offline"; ps.innerText = "OFFLINE - " + plantId;
+                    ps.className = "status-badge offline";
+                    ps.innerHTML = '<span class="status-dot"></span> OFFLINE — ' + plantId;
                 }
             });
 
-            unsubscribeTags = db.ref('plants/' + plantId + '/tags').on('value', (snapshot) => {
+            // Tags em tempo real
+            unsubscribeTags = dbRef.ref('plants/' + plantId + '/tags').on('value', (snapshot) => {
                 const tags = snapshot.val();
                 if (tags) {
-                    if(dashboard.innerHTML.includes("A aguardar")) dashboard.innerHTML = '';
+                    if(dashboard.innerHTML.includes("aguardar")) dashboard.innerHTML = '';
                     
                     const receivedTags = new Set(Object.keys(tags));
 
@@ -452,53 +888,32 @@
                         }
                         
                         let displayTitle = tagName.replace(/_/g, " ");
-                        
-                        // Variáveis de extração seguras
                         let displayValue = "0.00";
                         let unitText = "";
                         let rangeText = "";
                         let isAlarming = false;
                         
-                        // Lógica ROBUSTA para desempacotar o JSON enviado pelo Python
                         if (tagData !== null) {
                             if (typeof tagData === 'object') {
-                                // Se for o novo pacote rico
-                                let rawVal = tagData.value !== undefined ? tagData.value : tagData;
-                                
-                                // Formata com segurança para nunca exibir [object Object]
-                                if (typeof rawVal === 'number') {
-                                    displayValue = rawVal.toFixed(2);
-                                } else if (typeof rawVal === 'object') {
-                                    // Caso os dados fiquem acidentalmente "encapsulados", extraímos ou transformamos em string legível
-                                    displayValue = JSON.stringify(rawVal);
-                                } else {
-                                    displayValue = String(rawVal);
-                                }
-                                
-                                // Deteta propriedades visuais do pacote
-                                unitText = tagData.unit ? `<span style="font-size: 16px; margin-left: 4px; color: var(--text-muted);">${tagData.unit}</span>` : "";
+                                let rawVal = tagData.value !== undefined ? tagData.value : 0;
+                                displayValue = typeof rawVal === 'number' ? rawVal.toFixed(2) : String(rawVal);
+                                unitText = tagData.unit ? `<span class="tag-unit">${tagData.unit}</span>` : "";
                                 isAlarming = tagData.is_alarming === true;
                                 
                                 if (tagData.min !== undefined && tagData.max !== undefined) {
-                                    rangeText = `<div style="font-size: 10px; color: var(--text-muted); font-style: italic; margin-top: 8px;">Faixa: ${tagData.min} — ${tagData.max} ${tagData.unit || ''}</div>`;
+                                    rangeText = `<div class="tag-range">Faixa: ${tagData.min} — ${tagData.max} ${tagData.unit || ''}</div>`;
                                 }
-                            } else if (typeof tagData === 'number') {
-                                // Compatibilidade com a versão antiga (caso o Python ainda esteja a enviar apenas números)
-                                displayValue = tagData.toFixed(2);
                             } else {
-                                // Se por acaso chegar uma string ou boleano
-                                displayValue = String(tagData);
+                                displayValue = typeof tagData === 'number' ? tagData.toFixed(2) : String(tagData);
                             }
                         }
                         
-                        // Aplica a classe de piscar a vermelho se o estado de alarme for ativado
                         if (isAlarming) {
                             card.classList.add('alarm-active');
                         } else {
                             card.classList.remove('alarm-active');
                         }
                         
-                        // Injeta o HTML com a faixa e a cor
                         card.innerHTML = `
                             <div class="tag-title">${displayTitle}</div>
                             <div class="tag-value">
@@ -507,26 +922,20 @@
                             ${rangeText}
                         `;
 
-                        // Redimensiona o número sem afetar a unidade
                         setTimeout(() => {
                             const el = document.getElementById(id + "_value");
                             if (el) ajustarFonteValor(el, displayValue);
                         }, 0);
                     }
 
-                    // REMOVER CARDS ÓRFÃOS (Sincronização Real)
+                    // Remover cards órfãos
                     document.querySelectorAll("#dashboard .card").forEach(card => {
                         let exists = false;
                         for (const tagName of receivedTags) {
                             let normalized = tagName.replace(/[^a-zA-Z0-9_-]/g, "_");
-                            if ("tag_" + normalized === card.id) {
-                                exists = true;
-                                break;
-                            }
+                            if ("tag_" + normalized === card.id) { exists = true; break; }
                         }
-                        if (!exists) {
-                            card.remove();
-                        }
+                        if (!exists) card.remove();
                     });
                 }
             });
@@ -534,9 +943,9 @@
 
         function pararMonitoramento() {
             if (currentPlantId) {
-                db.ref('plants/' + currentPlantId + '/online').off('value', unsubscribeStatus);
-                db.ref('plants/' + currentPlantId + '/tags').off('value', unsubscribeTags);
-                db.ref('alarms/' + currentPlantId).off('value', unsubscribeAlarms);
+                dbRef.ref('plants/' + currentPlantId + '/online').off('value', unsubscribeStatus);
+                dbRef.ref('plants/' + currentPlantId + '/tags').off('value', unsubscribeTags);
+                dbRef.ref('alarms/' + currentPlantId).off('value', unsubscribeAlarms);
             }
         }
     </script>
