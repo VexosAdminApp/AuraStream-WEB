@@ -19,41 +19,19 @@ firebase.initializeApp({
     appId: "1:380237625698:web:db077e82d8ca77085cd43b"
 });
 
+// Apenas inicializa, não intercepta onBackgroundMessage
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage(function(payload) {
-    // MAGIA ANTI-DUPLICATAS (iOS/ANDROID)
-    // Se o payload tiver "notification", o Safari/Chrome já vai desenhar nativamente!
-    if (payload.notification) {
-        console.log('[SW] Bloqueada tentativa de duplicação. O SO assumiu.');
-        return; 
-    }
-    
-    // Fallback: Se for puramente "data", desenhamos manualmente
-    const data = payload.data || {};
-    const title = data.title || "⚠️ ALARME INDUSTRIAL";
-    const options = {
-        body: data.body || "Falha detectada no processo.",
-        icon: '/icon.png',
-        badge: '/icon.png',
-        vibrate: [500, 200, 500, 200, 800, 200, 800],
-        requireInteraction: true,
-        data: { url: data.url || '/?tab=alarms' },
-        tag: data.tag || 'scada-alarm-critical'
-    };
-
-    return self.registration.showNotification(title, options);
-});
-
-// ABERTURA IMEDIATA / FOCO NA ABA
+// TRATAMENTO EXCLUSIVO DE CLIQUE NA NOTIFICAÇÃO DO SISTEMA
 self.addEventListener('notificationclick', function(event) {
+    // 1. Fecha a notificação
     event.notification.close(); 
     
-    // Firebase mapeia dados de FCM Options e Payload para cá
-    const targetUrl = event.notification.data?.url || '/?tab=alarms';
+    const targetUrl = '/?tab=alarms';
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(windowClients) {
+            // 2. Tenta focar numa aba existente do aplicativo
             for (let i = 0; i < windowClients.length; i++) {
                 let client = windowClients[i];
                 if (client.url && 'focus' in client) {
@@ -61,6 +39,7 @@ self.addEventListener('notificationclick', function(event) {
                     return client.focus();
                 }
             }
+            // 3. Se o app estiver 100% fechado (kill state), abre uma nova janela
             if (clients.openWindow) {
                 return clients.openWindow(targetUrl);
             }
